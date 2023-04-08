@@ -5,13 +5,17 @@ Piece::Piece()
 	f_type = Pawn;
 	f_color = white;
 	f_value = 0;
+	f_alive = true;
+	f_coord = coordinate{ 0, 0 };
 }
 
-Piece::Piece(e_type type, e_color color, int value)
+Piece::Piece(e_type type, e_color color, int value, std::string pos)
 {
 	f_type = type;
 	f_color = color;
 	f_value = value;
+	f_alive = true;
+	f_coord = notation_to_coord(pos);
 }
 
 e_type Piece::get_type()
@@ -27,6 +31,44 @@ e_color Piece::get_color()
 int Piece::get_value()
 {
 	return this->f_value;
+}
+
+coordinate Piece::get_coord()
+{
+	return f_coord;
+}
+
+bool Piece::is_alive()
+{
+	return f_alive;
+}
+
+void Piece::set_coord(coordinate coord)
+{
+	f_coord = coord;
+}
+
+void Piece::set_alive(bool val)
+{
+	f_alive = val;
+}
+
+std::string Piece::coord_to_notation(coordinate coord)
+{
+	std::string pos = "";
+	pos[0] = 'a' + coord.column;
+	pos[1] = 8 - coord.row + '0';
+	return pos;
+}
+
+coordinate Piece::notation_to_coord(std::string pos)
+{
+	coordinate coord;
+
+	coord.row = 8 - (pos[1] - '0');
+	coord.column = pos[0] - 'a';
+
+	return coord;
 }
 
 bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
@@ -66,14 +108,14 @@ bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std
 	return true;
 }
 
-pieces::King::King() : Piece(e_type::King, white, 0)
+pieces::King::King() : Piece(e_type::King, white, 0, "a1")
 {
 	f_moved = false;
 	f_being_checked = false;
 }
 
-pieces::King::King(e_color color) :
-	Piece(e_type::King, color, 0)
+pieces::King::King(e_color color, std::string pos) :
+	Piece(e_type::King, color, 0, pos)
 {
 	f_moved = false;
 	f_being_checked = false;
@@ -109,13 +151,13 @@ void pieces::King::set_checking(bool val)
 }
 
 pieces::Rook::Rook() :
-	Piece(e_type::Rook, white, 4)
+	Piece(e_type::Rook, white, 4, "a1")
 {
 	f_moved = false;
 }
 
-pieces::Rook::Rook(e_color color) :
-	Piece(e_type::Rook, color, 4)
+pieces::Rook::Rook(e_color color, std::string pos) :
+	Piece(e_type::Rook, color, 4, pos)
 {
 	f_moved = false;
 }
@@ -139,10 +181,10 @@ void pieces::Rook::set_movement(bool val)
 }
 
 pieces::Queen::Queen() :
-	Piece(e_type::Queen, white, 9) {}
+	Piece(e_type::Queen, white, 9, "a1") {}
 
-pieces::Queen::Queen(e_color color) :
-	Piece(e_type::Queen, color, 9) {}
+pieces::Queen::Queen(e_color color, std::string pos) :
+	Piece(e_type::Queen, color, 9, pos) {}
 
 bool pieces::Queen::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
 {
@@ -153,10 +195,10 @@ bool pieces::Queen::movable(coordinate from, coordinate to, const std::vector<st
 }
 
 pieces::Bishop::Bishop() :
-	Piece(e_type::Bishop, white, 3) {}
+	Piece(e_type::Bishop, white, 3, "a1") {}
 
-pieces::Bishop::Bishop(e_color color) :
-	Piece(e_type::Bishop, color, 3) {}
+pieces::Bishop::Bishop(e_color color, std::string pos) :
+	Piece(e_type::Bishop, color, 3, pos) {}
 
 bool pieces::Bishop::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
 {
@@ -166,10 +208,10 @@ bool pieces::Bishop::movable(coordinate from, coordinate to, const std::vector<s
 }
 
 pieces::Knight::Knight() :
-	Piece(e_type::Knight, white, 3) {}
+	Piece(e_type::Knight, white, 3, "a1") {}
 
-pieces::Knight::Knight(e_color color) :
-	Piece(e_type::Knight, color, 3) {}
+pieces::Knight::Knight(e_color color, std::string pos) :
+	Piece(e_type::Knight, color, 3, pos) {}
 
 bool pieces::Knight::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
 {
@@ -182,13 +224,13 @@ bool pieces::Knight::movable(coordinate from, coordinate to, const std::vector<s
 }
 
 pieces::Pawn::Pawn() :
-	Piece(e_type::Pawn, white, 1) 
+	Piece(e_type::Pawn, white, 1, "a1")
 {
 	f_promoting = false;
 }
 
-pieces::Pawn::Pawn(e_color color) :
-	Piece(e_type::Pawn, color, 1) 
+pieces::Pawn::Pawn(e_color color, std::string pos) :
+	Piece(e_type::Pawn, color, 1, pos)
 {
 	f_promoting = false;
 }

@@ -62,10 +62,6 @@ void Graphics::handle_events(Board* board)
 				if (board->make_move(pixels_to_coord(f_selected_piece_origin), pixels_to_coord(f_mouse_pos)))
 				{
 					center_piece(f_selected_piece, &f_mouse_pos);
-
-					coordinate new_cord = pixels_to_coord(f_mouse_pos);
-					f_selected_piece->coord.row = new_cord.row;
-					f_selected_piece->coord.column = new_cord.column;
 				}
 				else
 					center_piece(f_selected_piece, &f_selected_piece_origin);
@@ -81,7 +77,8 @@ void Graphics::handle_events(Board* board)
 			f_lmb_down = true;
 			for (auto & piece : f_pieces)
 			{
-				if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.show && piece.color == board->get_current_turn())
+				if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive() && piece.piece->get_color() == board->get_current_turn())
+				//if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive()) // w/o move order
 				{
 					f_selected_piece = &piece;
 					f_selected_piece_origin.x = piece.rectangle->x;
@@ -102,12 +99,15 @@ void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix)
 {
 	for (auto& piece : f_pieces)
 	{
-		if ( (board_matrix[piece.coord.row][piece.coord.column] == nullptr || 
-			  board_matrix[piece.coord.row][piece.coord.column]->get_type() != piece.type ||
-			  board_matrix[piece.coord.row][piece.coord.column]->get_color() != piece.color
-			 ) && piece.show )
+		if ( piece.piece->is_alive() && &piece != f_selected_piece)
 		{
-			piece.show = false;
+			coordinate update_coord = piece.piece->get_coord();
+			if (f_game_host == black)
+			{
+				update_coord.row = 7 - update_coord.row;
+				update_coord.column = 7 - update_coord.column;
+			}
+			center_piece(&piece, update_coord);
 		}
 	}
 }
@@ -117,17 +117,13 @@ void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 	std::string name = BOARD_TEXTURE;
 	f_board_tex = SDL_CreateTextureFromSurface( f_renderer, IMG_Load( (IMG_PATH + name).c_str() ) );
 	
-	int i = 0, j = 0;
 	for (auto &row : board) 
 	{
-		j = 0;
 		for (auto &piece : row) 
 		{
-			if (piece != NULL)
-				init_piece(piece->get_type(), piece->get_color(), i, j);
-			j++;
+			if (piece != nullptr)
+				init_piece(piece);
 		}
-		i++;
 	}
 }
 
@@ -155,16 +151,18 @@ bool Graphics::running()
 	return f_is_running;
 }
 
-void Graphics::init_piece(e_type type, e_color color, int x, int y)
+void Graphics::init_piece(Piece* piece)
 {
+	std::string name = f_type[piece->get_type()] + f_color[piece->get_color()] + ".png";
+
+	int posX = piece->get_coord().column * f_cell_size + f_board_rect.x + (int)(0.12 * f_cell_size);
+	int posY = piece->get_coord().row * f_cell_size + f_board_rect.y + (int)(0.12 * f_cell_size);
 	int piece_size = f_cell_size - (int)(f_cell_size * 0.2);
-	std::string name = f_type[type] + f_color[color] + ".png";
-	int posX = y * f_cell_size + f_board_rect.x + (int)(0.12 * f_cell_size);
-	int posY = x * f_cell_size + f_board_rect.y + (int)(0.12 * f_cell_size);
+
 	SDL_Rect* curPiece = new SDL_Rect{ posX, posY, piece_size, piece_size };
 	SDL_Texture* curTex = SDL_CreateTextureFromSurface(f_renderer, IMG_Load((IMG_PATH + name).c_str()));
 
-	f_pieces.push_back(board_piece{ curPiece, curTex, true, type, color, coordinate{x, y} });
+	f_pieces.push_back(board_piece{ curPiece, curTex, piece });
 }
 
 void Graphics::render_board()
@@ -179,7 +177,7 @@ void Graphics::render_pieces()
 {
 	for (auto const& piece : f_pieces)
 	{
-		if (piece.show && &piece != f_selected_piece)
+		if (piece.piece->is_alive() && &piece != f_selected_piece)
 		{
 			SDL_RenderCopy(f_renderer, piece.texture, NULL, piece.rectangle);
 		}
@@ -204,6 +202,19 @@ void Graphics::center_piece(board_piece* piece, SDL_Point* f_mouse_pos)
 	{
 		piece->rectangle->x = f_selected_piece_origin.x;
 		piece->rectangle->y = f_selected_piece_origin.y;
+	}
+}
+
+void Graphics::center_piece(board_piece* piece, coordinate coord)
+{
+	int newX = f_cell_size * coord.column + f_board_rect.x + (int)(0.12 * f_cell_size),
+		newY = f_cell_size * coord.row + f_board_rect.y + (int)(0.12 * f_cell_size);
+
+	if (coord.row >= 0 && coord.row <= 7 &&
+		coord.column >= 0 && coord.column <= 7)
+	{
+		piece->rectangle->x = newX;
+		piece->rectangle->y = newY;
 	}
 }
 

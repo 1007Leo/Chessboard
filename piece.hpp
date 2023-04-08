@@ -16,11 +16,19 @@ struct coordinate {
 class Piece {
 public:
 	Piece();
-	Piece(e_type type, e_color color, int value);
+	Piece(e_type type, e_color color, int value, std::string pos);
 
 	e_type get_type();
 	e_color get_color();
 	int get_value();
+	coordinate get_coord();
+	bool is_alive();
+
+	void set_coord(coordinate coord);
+	void set_alive(bool val);
+
+	static std::string coord_to_notation(coordinate coord);
+	static coordinate notation_to_coord(std::string pos);
 
 	virtual bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) { return false; }
 
@@ -39,13 +47,15 @@ private:
 	e_type f_type;
 	e_color f_color;
 	int f_value;
+	coordinate f_coord;
+	bool f_alive;
 };
 
 namespace pieces {
 	class King : public Piece {
 	public:
 		King();
-		King(e_color color);
+		King(e_color color, std::string notation);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 
@@ -62,7 +72,7 @@ namespace pieces {
 	class Rook : public Piece {
 	public:
 		Rook();
-		Rook(e_color color);
+		Rook(e_color color, std::string pos);
 	
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 
@@ -76,7 +86,7 @@ namespace pieces {
 	class Queen : public Piece {
 	public:
 		Queen();
-		Queen(e_color color);
+		Queen(e_color color, std::string pos);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 	};
@@ -84,7 +94,7 @@ namespace pieces {
 	class Bishop : public Piece { 
 	public:
 		Bishop();
-		Bishop(e_color color);
+		Bishop(e_color color, std::string pos);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 	};
@@ -92,7 +102,7 @@ namespace pieces {
 	class Knight : public Piece {
 	public:
 		Knight();
-		Knight(e_color color);
+		Knight(e_color color, std::string pos);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 	};
@@ -100,7 +110,7 @@ namespace pieces {
 	class Pawn : public Piece {
 	public:
 		Pawn();
-		Pawn(e_color color);
+		Pawn(e_color color, std::string pos);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
 

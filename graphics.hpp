@@ -15,10 +15,7 @@ struct board_piece
 {
 	SDL_Rect* rectangle;
 	SDL_Texture* texture;
-	bool show = true;
-	e_type type;
-	e_color color;
-	coordinate coord;
+	Piece* piece;
 };
 
 class Graphics 
@@ -39,8 +36,9 @@ public:
 private:
 	void render_board();
 	void render_pieces();
-	void init_piece(e_type type, e_color color, int x, int y);
+	void init_piece(Piece *piece);
 	void center_piece(board_piece* piece, SDL_Point* f_mouse_pos);
+	void center_piece(board_piece* piece, coordinate coord);
 	coordinate pixels_to_coord(SDL_Point pixels_pos);
 
 	std::string f_type[6] = { "King", "Queen", "Bishop", "Knight", "Rook", "Pawn" };
