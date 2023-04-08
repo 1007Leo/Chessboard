@@ -123,14 +123,8 @@ void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 		j = 0;
 		for (auto &piece : row) 
 		{
-			int x = i, y = j;
-			if (f_game_host == black) 
-			{
-				x = 7 - x;
-				y = 7 - y;
-			}
 			if (piece != NULL)
-				init_piece(piece->get_type(), piece->get_color(), x, y);
+				init_piece(piece->get_type(), piece->get_color(), i, j);
 			j++;
 		}
 		i++;
@@ -169,12 +163,6 @@ void Graphics::init_piece(e_type type, e_color color, int x, int y)
 	int posY = x * f_cell_size + f_board_rect.y + (int)(0.12 * f_cell_size);
 	SDL_Rect* curPiece = new SDL_Rect{ posX, posY, piece_size, piece_size };
 	SDL_Texture* curTex = SDL_CreateTextureFromSurface(f_renderer, IMG_Load((IMG_PATH + name).c_str()));
-
-	if (f_game_host == black) 
-	{
-		x = 7 - x;
-		y = 7 - y;
-	}
 
 	f_pieces.push_back(board_piece{ curPiece, curTex, true, type, color, coordinate{x, y} });
 }
