@@ -12,15 +12,13 @@ public:
 	e_color get_current_turn();
 
 	Piece* get_piece_at(coordinate coord);
-	std::string coord_to_notation(coordinate coord);
-	coordinate notation_to_coord(std::string pos);
 
 	// Debug
 	void print_board();
 
 private:
 	bool able_to_move(coordinate from, coordinate to);
-	void set_piece(Piece* piece, std::string pos);
+	void set_piece(Piece* piece);
 
 	int f_width;
 	int f_length;

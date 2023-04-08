@@ -9,10 +9,9 @@ Board::Board()
 	f_current_turn = white;
 }
 
-void Board::set_piece(Piece* piece, std::string pos)
+void Board::set_piece(Piece* piece)
 {
-	coordinate coord = notation_to_coord(pos);
-	f_game_field[coord.row][coord.column] = piece;
+	f_game_field[piece->get_coord().row][piece->get_coord().column] = piece;
 }
 
 void Board::new_game()
@@ -23,32 +22,32 @@ void Board::new_game()
 			delete cell;
 		}	
 
-	set_piece(new pieces::King(white), "e1");
-	set_piece(new pieces::King(black), "e8");
+	set_piece(new pieces::King(white, "e1"));
+	set_piece(new pieces::King(black, "e8"));
 
-	set_piece(new pieces::Queen(white), "d1");
-	set_piece(new pieces::Queen(black), "d8");
+	set_piece(new pieces::Queen(white, "d1"));
+	set_piece(new pieces::Queen(black, "d8"));
 
-	set_piece(new pieces::Rook(white), "a1");
-	set_piece(new pieces::Rook(white), "h1");
-	set_piece(new pieces::Rook(black), "a8");
-	set_piece(new pieces::Rook(black), "h8");
+	set_piece(new pieces::Rook(white, "a1"));
+	set_piece(new pieces::Rook(white, "h1"));
+	set_piece(new pieces::Rook(black, "a8"));
+	set_piece(new pieces::Rook(black, "h8"));
 
-	set_piece(new pieces::Bishop(white), "c1");
-	set_piece(new pieces::Bishop(white), "f1");
-	set_piece(new pieces::Bishop(black), "c8");
-	set_piece(new pieces::Bishop(black), "f8");
+	set_piece(new pieces::Bishop(white, "c1"));
+	set_piece(new pieces::Bishop(white, "f1"));
+	set_piece(new pieces::Bishop(black, "c8"));
+	set_piece(new pieces::Bishop(black, "f8"));
 
-	set_piece(new pieces::Knight(white), "b1");
-	set_piece(new pieces::Knight(white), "g1");
-	set_piece(new pieces::Knight(black), "b8");
-	set_piece(new pieces::Knight(black), "g8");
+	set_piece(new pieces::Knight(white, "b1"));
+	set_piece(new pieces::Knight(white, "g1"));
+	set_piece(new pieces::Knight(black, "b8"));
+	set_piece(new pieces::Knight(black, "g8"));
 
 	std::string pos = "a2";
 	for (int i = 0; i < f_width; i++) {
-		set_piece(new pieces::Pawn(white), pos);
+		set_piece(new pieces::Pawn(white, pos));
 		pos[1] += 5;
-		set_piece(new pieces::Pawn(black), pos);
+		set_piece(new pieces::Pawn(black, pos));
 		pos[0]++;
 		pos[1] -= 5;
 	}
@@ -85,8 +84,10 @@ bool Board::make_move(coordinate from, coordinate to)
 	{
 		if (f_game_field[to.row][to.column] != nullptr)
 		{
+			f_game_field[to.row][to.column]->set_alive(false);
 			f_game_field[to.row][to.column] = nullptr;
 		}
+		f_game_field[from.row][from.column]->set_coord(to);
 		std::swap(f_game_field[from.row][from.column], f_game_field[to.row][to.column]);
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		//print_board();
@@ -94,24 +95,6 @@ bool Board::make_move(coordinate from, coordinate to)
 		return true;
 	}
 	return false;
-}
-
-std::string Board::coord_to_notation(coordinate coord)
-{
-	std::string pos = "";
-	pos[0] = 'a' + coord.column;
-	pos[1] = 8 - coord.row + '0';
-	return pos;
-}
-
-coordinate Board::notation_to_coord(std::string pos)
-{
-	coordinate coord;
-
-	coord.row = 8 - (pos[1] - '0');
-	coord.column = pos[0] - 'a';
-
-	return coord;
 }
 
 const std::vector<std::vector<Piece*>>& Board::get_board()
