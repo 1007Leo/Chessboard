@@ -14,6 +14,26 @@ void Board::set_piece(Piece* piece)
 	f_game_field[piece->get_coord().row][piece->get_coord().column] = piece;
 }
 
+void Board::move_rook_if_castling(coordinate from, coordinate to)
+{
+	if (get_piece_at(to)->get_type() == King && abs(from.column - to.column) == 2)
+	{
+		if (from.column - to.column == 2)
+		{
+			f_game_field[from.row][0]->set_movement(true);
+			f_game_field[from.row][0]->set_coord(coordinate{ from.row, to.column + 1 });
+			std::swap(f_game_field[from.row][0], f_game_field[from.row][to.column + 1]);
+
+		}
+		else if (from.column - to.column == -2)
+		{
+			f_game_field[from.row][7]->set_movement(true);
+			f_game_field[from.row][7]->set_coord(coordinate{ from.row, to.column - 1 });
+			std::swap(f_game_field[from.row][7], f_game_field[from.row][to.column - 1]);
+		}
+	}
+}
+
 void Board::new_game()
 {
 	for (auto& row : f_game_field)
@@ -88,7 +108,9 @@ bool Board::make_move(coordinate from, coordinate to)
 			f_game_field[to.row][to.column] = nullptr;
 		}
 		f_game_field[from.row][from.column]->set_coord(to);
+		f_game_field[from.row][from.column]->set_movement(true);
 		std::swap(f_game_field[from.row][from.column], f_game_field[to.row][to.column]);
+		move_rook_if_castling(from, to);
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		//print_board();
 

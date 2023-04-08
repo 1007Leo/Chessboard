@@ -127,6 +127,20 @@ bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std
 		d2 = abs(from.column - to.column);
 	if (d1 < 2 && d2 < 2)
 		return true;
+	int d_castling = from.column - to.column;
+	if (f_moved == false && d1 == 0)
+	{
+		if (d_castling == 2 && board[from.row][0] != nullptr)
+		{
+			if (board[from.row][0]->get_type() == e_type::Rook && !board[from.row][0]->is_moved())
+				return is_way_blocked(from, coordinate{ from.row, 0 }, board);
+		}
+		else if (d_castling == -2 && board[from.row][7] != nullptr)
+		{
+			if (board[from.row][7]->get_type() == e_type::Rook && !board[from.row][7]->is_moved())
+				return is_way_blocked(from, coordinate{ from.row, 7 }, board);
+		}
+	}
 	return false;
 }
 
