@@ -19,6 +19,7 @@ public:
 private:
 	bool able_to_move(coordinate from, coordinate to);
 	void set_piece(Piece* piece);
+	void Board::move_rook_if_castling(coordinate from, coordinate to);
 
 	int f_width;
 	int f_length;
