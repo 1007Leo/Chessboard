@@ -11,6 +11,25 @@ enum e_color { white = 0, black = 1 };
 struct coordinate {
 	int row;
 	int column;
+
+	friend bool operator==(const coordinate& l, const coordinate& r) {
+		return ((l.row == r.row) && (l.column == r.column));
+	}
+	friend bool operator!=(const coordinate& l, const coordinate& r) {
+		return ((l.row != r.row) || (l.column != r.column));
+	}
+};
+
+struct move {
+	coordinate from;
+	coordinate to;
+
+	friend bool operator==(const move& l, const move& r) {
+		return ((l.from == r.from) && (l.to == r.to));
+	}
+	friend bool operator!=(const move& l, const move& r) {
+		return ((l.from != r.from) || (l.to != r.to));
+	}
 };
 
 class Piece {
@@ -30,7 +49,7 @@ public:
 	static std::string coord_to_notation(coordinate coord);
 	static coordinate notation_to_coord(std::string pos);
 
-	virtual bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) { return false; }
+	virtual bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) { return false; }
 
 	virtual bool is_moved() { return false; }
 	virtual bool is_being_checked() { return false; }
@@ -57,7 +76,7 @@ namespace pieces {
 		King();
 		King(e_color color, std::string notation);
 
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 
 		bool is_moved() override;
 		bool is_being_checked() override;
@@ -74,7 +93,7 @@ namespace pieces {
 		Rook();
 		Rook(e_color color, std::string pos);
 	
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 
 		bool is_moved() override;
 
@@ -88,7 +107,7 @@ namespace pieces {
 		Queen();
 		Queen(e_color color, std::string pos);
 
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 	};
 
 	class Bishop : public Piece { 
@@ -96,7 +115,7 @@ namespace pieces {
 		Bishop();
 		Bishop(e_color color, std::string pos);
 
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 	};
 
 	class Knight : public Piece {
@@ -104,7 +123,7 @@ namespace pieces {
 		Knight();
 		Knight(e_color color, std::string pos);
 
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 	};
 
 	class Pawn : public Piece {
@@ -112,7 +131,7 @@ namespace pieces {
 		Pawn();
 		Pawn(e_color color, std::string pos);
 
-		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board) override;
+		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 
 		bool is_promoting() override;
 		void set_promoting(bool val) override;

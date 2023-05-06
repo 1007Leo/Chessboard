@@ -121,7 +121,7 @@ pieces::King::King(e_color color, std::string pos) :
 	f_being_checked = false;
 }
 
-bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	int d1 = abs(from.row - to.row),
 		d2 = abs(from.column - to.column);
@@ -176,7 +176,7 @@ pieces::Rook::Rook(e_color color, std::string pos) :
 	f_moved = false;
 }
 
-bool pieces::Rook::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::Rook::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	if (from.row != to.row && from.column != to.column)
 		return false;
@@ -200,7 +200,7 @@ pieces::Queen::Queen() :
 pieces::Queen::Queen(e_color color, std::string pos) :
 	Piece(e_type::Queen, color, 9, pos) {}
 
-bool pieces::Queen::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::Queen::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	if (abs(from.row - to.row) != abs(from.column - to.column) &&
 		(from.row != to.row && from.column != to.column))
@@ -214,7 +214,7 @@ pieces::Bishop::Bishop() :
 pieces::Bishop::Bishop(e_color color, std::string pos) :
 	Piece(e_type::Bishop, color, 3, pos) {}
 
-bool pieces::Bishop::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::Bishop::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	if (abs(from.row - to.row) != abs(from.column - to.column))
 		return false;
@@ -227,7 +227,7 @@ pieces::Knight::Knight() :
 pieces::Knight::Knight(e_color color, std::string pos) :
 	Piece(e_type::Knight, color, 3, pos) {}
 
-bool pieces::Knight::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::Knight::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	int d1 = abs(from.row - to.row),
 		d2 = abs(from.column - to.column);
@@ -249,7 +249,7 @@ pieces::Pawn::Pawn(e_color color, std::string pos) :
 	f_promoting = false;
 }
 
-bool pieces::Pawn::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
+bool pieces::Pawn::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
 {
 	int d1 = from.row - to.row,
 		d2 = from.column - to.column;
@@ -275,7 +275,14 @@ bool pieces::Pawn::movable(coordinate from, coordinate to, const std::vector<std
 	if (abs(d1) != 1 && abs(d2) != 0)
 		return false;
 	if (abs(d2) != 0 && board[to.row][to.column] == nullptr)
-		return false;
+	{
+		move sutable_move = { {to.row - d1, to.column}, {to.row + d1, to.column} };
+		if (last_move != sutable_move ||
+			last_move.to.row == -1 ||
+			last_move.to.column == -1 ||
+			board[last_move.to.row][last_move.to.column]->get_type() != e_type::Pawn)
+			return false;
+	}
 	return true;
 }
 
