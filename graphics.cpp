@@ -66,6 +66,9 @@ void Graphics::handle_events(Board* board)
 				else
 					center_piece(f_selected_piece, &f_selected_piece_origin);
 				
+				f_selected_piece->rectangle->h -= 10;
+				f_selected_piece->rectangle->w -= 10;
+
 				f_selected_piece = NULL;
 			}
 			f_lmb_down = false;
@@ -83,8 +86,14 @@ void Graphics::handle_events(Board* board)
 					f_selected_piece = &piece;
 					f_selected_piece_origin.x = piece.rectangle->x;
 					f_selected_piece_origin.y = piece.rectangle->y;
-					f_click_offset.x = f_mouse_pos.x - piece.rectangle->x;
-					f_click_offset.y = f_mouse_pos.y - piece.rectangle->y;
+					
+					f_selected_piece->rectangle->h += 10;
+					f_selected_piece->rectangle->w += 10;
+					
+					f_click_offset.x = piece.rectangle->w / 2 - 2;
+					f_click_offset.y = piece.rectangle->h / 2 - 2;
+					f_selected_piece->rectangle->x = f_mouse_pos.x - f_click_offset.x;
+					f_selected_piece->rectangle->y = f_mouse_pos.y - f_click_offset.y;
 					break;
 				}
 			}

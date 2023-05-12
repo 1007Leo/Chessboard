@@ -40,13 +40,13 @@ void Board::remove_pawn_if_enPassant(coordinate from, coordinate to)
 	if (f_last_move == move{ {-1, -1}, {-1, -1} })
 		return;
 
-	int d1 = from.row - to.row,
-		d2 = from.column - to.column;
+	int row_d = from.row - to.row,
+		col_d = from.column - to.column;
 	if (get_piece_at(from)->get_type() == e_type::Pawn &&
-		get_piece_at(to) == nullptr && d2 != 0) 
+		get_piece_at(to) == nullptr && col_d != 0) 
 	{
-		f_game_field[to.row + d1][to.column]->set_alive(false);
-		f_game_field[to.row + d1][to.column] = nullptr;
+		f_game_field[to.row + row_d][to.column]->set_alive(false);
+		f_game_field[to.row + row_d][to.column] = nullptr;
 	}
 		
 }
@@ -100,14 +100,11 @@ bool Board::able_to_move(coordinate from, coordinate to)
 	if (to.column == -1 || to.row == -1)
 		return false;
 
-	if (from.column == to.column && from.row == to.row) 
+	if (from == to) 
 		return false;
 	
 	Piece* from_piece = get_piece_at(from);
 	Piece* to_piece = get_piece_at(to);
-
-	//if (f_current_turn != from_piece->get_color())
-		//return false;
 
 	if (from_piece != nullptr && to_piece != nullptr)
 		if (from_piece->get_color() == to_piece->get_color()) 
@@ -119,6 +116,7 @@ bool Board::make_move(coordinate from, coordinate to)
 {
 	if (able_to_move(from, to))
 	{
+		remove_pawn_if_enPassant(from, to);
 		if (f_game_field[to.row][to.column] != nullptr)
 		{
 			f_game_field[to.row][to.column]->set_alive(false);
@@ -126,14 +124,12 @@ bool Board::make_move(coordinate from, coordinate to)
 		}
 		f_game_field[from.row][from.column]->set_coord(to);
 		f_game_field[from.row][from.column]->set_movement(true);
-		remove_pawn_if_enPassant(from, to);
 		std::swap(f_game_field[from.row][from.column], f_game_field[to.row][to.column]);
 		move_rook_if_castling(from, to);
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
 
-		std::cout << f_last_move.from.row << ' ' << f_last_move.from.column << " | " << f_last_move.to.row << ' ' << f_last_move.to.column << '\n';
-		print_board();
+		//print_board();
 
 		return true;
 	}
