@@ -1,5 +1,13 @@
 #include "graphics.hpp"
 
+Graphics::~Graphics()
+{
+	for (auto& piece : f_pieces) {
+		delete piece.piece;
+		delete piece.rectangle;
+	}
+}
+
 Graphics::Graphics()
 {
 	f_board_rect = { 100, 100, 600, 600 };

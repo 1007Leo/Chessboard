@@ -23,6 +23,7 @@ class Graphics
 public:
 	Graphics();
 	Graphics(int board_pixel_x, int board_pixel_y, int board_size, e_color host_color);
+	~Graphics();
 
 	bool init(const char* title, int xpos, int ypos, int width, int height);
 	void handle_events(Board* board);
