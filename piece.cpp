@@ -73,18 +73,8 @@ coordinate Piece::notation_to_coord(std::string pos)
 
 bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board)
 {
-	int row_d = from.row - to.row,
-		col_d = from.column - to.column;
-	
-	if (row_d > 0)
-		row_d = -1;
-	else if (row_d < 0)
-		row_d = 1;
-
-	if (col_d > 0)
-		col_d = -1;
-	else if (col_d < 0)
-		col_d = 1;
+	int row_d = -sgn(from.row - to.row),
+		col_d = -sgn(from.column - to.column);
 
 	if (row_d > 0)
 		to.row -= row_d;
@@ -111,14 +101,14 @@ bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std
 pieces::King::King() : Piece(e_type::King, white, 0, "a1")
 {
 	f_moved = false;
-	f_being_checked = false;
+	f_checking_piece = nullptr;
 }
 
 pieces::King::King(e_color color, std::string pos) :
 	Piece(e_type::King, color, 0, pos)
 {
 	f_moved = false;
-	f_being_checked = false;
+	f_checking_piece = nullptr;
 }
 
 bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
@@ -149,9 +139,9 @@ bool pieces::King::is_moved()
 	return this->f_moved;
 }
 
-bool pieces::King::is_being_checked()
+Piece* pieces::King::checked_by()
 {
-	return this->f_being_checked;
+	return this->f_checking_piece;
 }
 
 void pieces::King::set_movement(bool val)
@@ -159,9 +149,9 @@ void pieces::King::set_movement(bool val)
 	this->f_moved = val;
 }
 
-void pieces::King::set_checking(bool val)
+void pieces::King::set_checking(Piece* chk_piece)
 {
-	this->f_being_checked = val;
+	this->f_checking_piece = chk_piece;
 }
 
 pieces::Rook::Rook() :
@@ -303,4 +293,9 @@ bool pieces::Pawn::is_promoting()
 void pieces::Pawn::set_promoting(bool val)
 {
 	this->f_promoting = val;
+}
+
+int sgn(int val)
+{
+	return (0 < val) - (val < 0);
 }
