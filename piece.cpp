@@ -101,14 +101,14 @@ bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std
 pieces::King::King() : Piece(e_type::King, white, 0, "a1")
 {
 	f_moved = false;
-	f_checking_piece = nullptr;
+	f_is_being_checked = false;
 }
 
 pieces::King::King(e_color color, std::string pos) :
 	Piece(e_type::King, color, 0, pos)
 {
 	f_moved = false;
-	f_checking_piece = nullptr;
+	f_is_being_checked = false;
 }
 
 bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move)
@@ -148,9 +148,9 @@ bool pieces::King::is_moved()
 	return this->f_moved;
 }
 
-Piece* pieces::King::checked_by()
+bool pieces::King::is_being_checked()
 {
-	return this->f_checking_piece;
+	return this->f_is_being_checked;
 }
 
 void pieces::King::set_movement(bool val)
@@ -158,9 +158,9 @@ void pieces::King::set_movement(bool val)
 	this->f_moved = val;
 }
 
-void pieces::King::set_checking(Piece* chk_piece)
+void pieces::King::set_checking(bool val)
 {
-	this->f_checking_piece = chk_piece;
+	this->f_is_being_checked = val;
 }
 
 bool pieces::King::is_checked_from_direction(int row_d, int col_d, const std::vector<std::vector<Piece*>> board)

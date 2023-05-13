@@ -69,6 +69,22 @@ Piece* Board::get_piece_by_criteria(e_type type, e_color color, unsigned int ent
 	return nullptr;
 }
 
+void Board::change_king_state_if_check(coordinate from, coordinate to)
+{
+	Piece* ally_king = get_piece_by_criteria(King, f_current_turn);
+	Piece* enemy_king = get_piece_by_criteria(King, (e_color)((f_current_turn + 1) % 2));
+
+	if (ally_king->is_being_checked())
+	{
+		ally_king->set_checking(false);
+	}
+	
+	enemy_king->set_checking(enemy_king->is_checked_scan(this->f_game_field));
+
+	//std::cout << "Color: " << ally_king->get_color() << ", checked: " << ally_king->is_being_checked() << '\n';
+	//std::cout << "Color: " << enemy_king->get_color() << ", checked: " << enemy_king->is_being_checked() << '\n';
+}
+
 bool Board::move_causing_self_check(coordinate from, coordinate to)
 {
 	Piece* ally_king = this->get_piece_by_criteria(King, this->f_current_turn);
@@ -169,6 +185,7 @@ bool Board::make_move(coordinate from, coordinate to)
 		remove_pawn_if_enPassant(from, to);
 		move_rook_if_castling(from, to);
 		
+		
 		if (f_game_field[to.row][to.column] != nullptr)
 		{
 			f_game_field[to.row][to.column]->set_alive(false);
@@ -179,6 +196,8 @@ bool Board::make_move(coordinate from, coordinate to)
 		f_game_field[from.row][from.column]->set_movement(true);
 
 		std::swap(f_game_field[from.row][from.column], f_game_field[to.row][to.column]);
+
+		change_king_state_if_check(from, to);
 
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};

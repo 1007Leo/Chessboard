@@ -53,11 +53,11 @@ public:
 	virtual bool is_checked_scan(const std::vector<std::vector<Piece*>> board) { return false; };
 
 	virtual bool is_moved() { return false; }
-	virtual Piece* checked_by() { return nullptr; }
+	virtual bool is_being_checked() { return false; }
 	virtual bool is_promoting() { return false; }
 
 	virtual void set_movement(bool val) {};
-	virtual void set_checking(Piece* val) {};
+	virtual void set_checking(bool val) {};
 	virtual void set_promoting(bool val) {};
 
 protected:
@@ -81,16 +81,16 @@ namespace pieces {
 		bool is_checked_scan(const std::vector<std::vector<Piece*>> board) override;
 
 		bool is_moved() override;
-		Piece* checked_by() override;
+		bool is_being_checked() override;
 		
 		void set_movement(bool val) override;
-		void set_checking(Piece* val) override;
+		void set_checking(bool val) override;
 	private:
 		bool is_checked_from_direction(int row_d, int col_d, const std::vector<std::vector<Piece*>> board);
 		bool is_checked_by_knight(const std::vector<std::vector<Piece*>> board);
 
 		bool f_moved;
-		Piece* f_checking_piece;
+		bool f_is_being_checked;
 	};
 
 	class Rook : public Piece {
