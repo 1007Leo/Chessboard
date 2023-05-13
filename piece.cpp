@@ -134,6 +134,15 @@ bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std
 	return false;
 }
 
+bool pieces::King::is_checked_scan(const std::vector<std::vector<Piece*>> board)
+{
+	for (int row_d = -1; row_d <= 1; row_d++)
+		for (int col_d = -1; col_d <= 1; col_d++)
+			if (is_checked_from_direction(row_d, col_d, board))
+				return true;
+	return false;
+}
+
 bool pieces::King::is_moved()
 {
 	return this->f_moved;
@@ -152,6 +161,81 @@ void pieces::King::set_movement(bool val)
 void pieces::King::set_checking(Piece* chk_piece)
 {
 	this->f_checking_piece = chk_piece;
+}
+
+bool pieces::King::is_checked_from_direction(int row_d, int col_d, const std::vector<std::vector<Piece*>> board)
+{
+	if (row_d == 0 && col_d == 0)
+		return is_checked_by_knight(board);
+
+	coordinate cur_pos = this->get_coord();
+	e_color this_color = this->get_color();
+
+	cur_pos.row += row_d;
+	cur_pos.column += col_d;
+
+	int i = 0;
+
+	while (cur_pos.row >= 0 && cur_pos.row <= 7 &&
+		cur_pos.column >= 0 && cur_pos.column <= 7)
+	{
+		Piece* cur_piece = board[cur_pos.row][cur_pos.column];
+		if (cur_piece != nullptr)
+		{
+			if (i == 0)
+			{
+				if (cur_piece->get_color() != this_color &&
+					(cur_piece->get_type() == e_type::Pawn || cur_piece->get_type() == e_type::King))
+				{
+					return true;
+				}
+			}
+
+			if (row_d == 0 || col_d == 0)
+			{
+				if (cur_piece->get_color() != this_color &&
+					(cur_piece->get_type() == e_type::Rook || cur_piece->get_type() == e_type::Queen))
+				{
+					return true;
+				}
+				return false;
+			}
+			else
+			{
+				if (cur_piece->get_color() != this_color &&
+					(cur_piece->get_type() == e_type::Bishop || cur_piece->get_type() == e_type::Queen))
+				{
+					return true;
+				}
+				return false;
+			}
+		}
+		
+		cur_pos.row += row_d;
+		cur_pos.column += col_d;
+		i++;
+	}
+	return false;
+}
+
+bool pieces::King::is_checked_by_knight(const std::vector<std::vector<Piece*>> board)
+{
+	coordinate king_pos = this->get_coord();
+	e_color enemy_color = (e_color)((this->get_color() + 1) % 2);
+	std::vector<coordinate> coords{ {king_pos.row - 2, king_pos.column + 1}, {king_pos.row - 1, king_pos.column + 2},
+									{king_pos.row + 1, king_pos.column + 2}, {king_pos.row + 2, king_pos.column + 1},
+									{king_pos.row + 2, king_pos.column - 1}, {king_pos.row + 1, king_pos.column - 2},
+									{king_pos.row - 1, king_pos.column - 2}, {king_pos.row - 2, king_pos.column - 1} };
+	for (auto coord : coords)
+	{
+		if (coord.row >= 0 && coord.row <= 7 && coord.column >= 0 && coord.column <= 7)
+		{
+			Piece* piece = board[coord.row][coord.column];
+			if (piece != nullptr && piece->get_color() == enemy_color && piece->get_type() == e_type::Knight)
+				return true;
+		}
+	}
+	return false;
 }
 
 pieces::Rook::Rook() :

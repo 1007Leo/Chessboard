@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 
-//typedef std::vector<std::vector<Piece*>> board_matr_type;
-
 enum e_type { King = 0, Queen = 1, Bishop = 2, Knight = 3, Rook = 4, Pawn = 5 };
 enum e_color { white = 0, black = 1 };
 
@@ -52,6 +50,7 @@ public:
 	static coordinate notation_to_coord(std::string pos);
 
 	virtual bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) { return false; }
+	virtual bool is_checked_scan(const std::vector<std::vector<Piece*>> board) { return false; };
 
 	virtual bool is_moved() { return false; }
 	virtual Piece* checked_by() { return nullptr; }
@@ -79,6 +78,7 @@ namespace pieces {
 		King(e_color color, std::string notation);
 
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
+		bool is_checked_scan(const std::vector<std::vector<Piece*>> board) override;
 
 		bool is_moved() override;
 		Piece* checked_by() override;
@@ -86,6 +86,9 @@ namespace pieces {
 		void set_movement(bool val) override;
 		void set_checking(Piece* val) override;
 	private:
+		bool is_checked_from_direction(int row_d, int col_d, const std::vector<std::vector<Piece*>> board);
+		bool is_checked_by_knight(const std::vector<std::vector<Piece*>> board);
+
 		bool f_moved;
 		Piece* f_checking_piece;
 	};
