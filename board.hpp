@@ -10,20 +10,21 @@ public:
 	bool make_move(coordinate from, coordinate to);
 	const std::vector< std::vector< Piece* > >& get_board();
 	e_color get_current_turn();
+	move get_last_move();
 
 	Piece* get_piece_at(coordinate coord);
+	bool able_to_move(coordinate from, coordinate to);
 
 	// Debug
 	void print_board();
 
 private:
-	bool able_to_move(coordinate from, coordinate to);
 	void set_piece(Piece* piece);
 	void move_rook_if_castling(coordinate from, coordinate to);
 	void remove_pawn_if_enPassant(coordinate from, coordinate to);
 	void change_king_state_if_check(coordinate from, coordinate to);
-	Piece* get_piece_by_criteria(e_type type, e_color color, unsigned int entry = 0);
 	bool move_causing_self_check(coordinate from, coordinate to);
+	Piece* get_piece_by_criteria(e_type type, e_color color, unsigned int entry = 0);
 	Piece* temp_move_piece(coordinate from, coordinate to, Piece* pcs_at_first_cord);
 
 	int f_width;

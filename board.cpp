@@ -219,6 +219,11 @@ e_color Board::get_current_turn()
 	return f_current_turn;
 }
 
+move Board::get_last_move()
+{
+	return f_last_move;
+}
+
 void Board::print_board()
 {
 	for (int i = 0; i < f_length; i++) {
