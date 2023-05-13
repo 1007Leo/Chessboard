@@ -98,6 +98,27 @@ bool Piece::is_way_blocked(coordinate from, coordinate to, const std::vector<std
 	return true;
 }
 
+std::list<coordinate> Piece::get_all_moves_in_direction(int row_d, int col_d, const std::vector<std::vector<Piece*>> board)
+{
+	std::list<coordinate> res;
+	if (row_d == 0 && col_d == 0)
+		return res;
+	coordinate cur_pos = this->get_coord();
+	e_color this_color = this->get_color();
+	cur_pos.row += row_d;
+	cur_pos.column += col_d;
+
+	while (cur_pos.row >= 0 && cur_pos.row <= 7 &&
+		cur_pos.column >= 0 && cur_pos.column <= 7 &&
+		(board[cur_pos.row][cur_pos.column] == nullptr || board[cur_pos.row][cur_pos.column]->get_color() != this_color))
+	{
+		res.push_back(cur_pos);
+		cur_pos.row += row_d;
+		cur_pos.column += col_d;
+	}
+	return res;
+}
+
 pieces::King::King() : Piece(e_type::King, white, 0, "a1")
 {
 	f_moved = false;
@@ -132,6 +153,30 @@ bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std
 		}
 	}
 	return false;
+}
+
+std::list<coordinate> pieces::King::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	std::list<coordinate> available_moves;
+	coordinate from = this->get_coord();
+	for (int i = -1; i <= 1; i++)
+		for (int j = -1; j <= 1; j++)
+		{
+			coordinate to = { from.row + i, from.column + j };
+			if (to.row >= 0 && to.row <= 7 &&
+				to.column >= 0 && to.column <= 7)
+				if (this->movable(from, to, board, last_move))
+					available_moves.push_back(to);
+		}
+		
+	coordinate to = { from.row, from.column + 2 };
+	if (this->movable(from, to, board, last_move))
+		available_moves.push_back(to);
+	to = { from.row, from.column - 2 };
+	if (this->movable(from, to, board, last_move))
+		available_moves.push_back(to);
+
+	return available_moves;
 }
 
 bool pieces::King::is_checked_scan(const std::vector<std::vector<Piece*>> board)
@@ -185,9 +230,17 @@ bool pieces::King::is_checked_from_direction(int row_d, int col_d, const std::ve
 			if (i == 0)
 			{
 				if (cur_piece->get_color() != this_color &&
-					(cur_piece->get_type() == e_type::Pawn || cur_piece->get_type() == e_type::King))
+					cur_piece->get_type() == e_type::King)
 				{
 					return true;
+				}
+				if (cur_piece->get_color() != this_color &&
+					cur_piece->get_type() == e_type::Pawn)
+				{
+					if (this_color == white && ((row_d == -1 && col_d == 1) || (row_d == -1 && col_d == -1)))
+						return true;
+					if (this_color == black && ((row_d == 1 && col_d == 1) || (row_d == 1 && col_d == -1)))
+						return true;
 				}
 			}
 
@@ -258,6 +311,22 @@ bool pieces::Rook::movable(coordinate from, coordinate to, const std::vector<std
 	return is_way_blocked(from, to, board);
 }
 
+std::list<coordinate> pieces::Rook::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	std::list<coordinate> res;
+
+	for (auto coord : get_all_moves_in_direction(1, 0, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(-1, 0, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(0, 1, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(0, -1, board))
+		res.push_back(coord);
+
+	return res;
+}
+
 bool pieces::Rook::is_moved()
 {
 	return this->f_moved;
@@ -282,6 +351,18 @@ bool pieces::Queen::movable(coordinate from, coordinate to, const std::vector<st
 	return is_way_blocked(from, to, board);
 }
 
+std::list<coordinate> pieces::Queen::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	std::list<coordinate> res;
+
+	for (int i = -1; i <= 1; i++)
+		for (int j = -1; j <= 1; j++)
+			for (auto coord : get_all_moves_in_direction(i, j, board))
+				res.push_back(coord);
+
+	return res;
+}
+
 pieces::Bishop::Bishop() :
 	Piece(e_type::Bishop, white, 3, "a1") {}
 
@@ -293,6 +374,22 @@ bool pieces::Bishop::movable(coordinate from, coordinate to, const std::vector<s
 	if (abs(from.row - to.row) != abs(from.column - to.column))
 		return false;
 	return is_way_blocked(from, to, board);
+}
+
+std::list<coordinate> pieces::Bishop::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	std::list<coordinate> res;
+
+	for (auto coord : get_all_moves_in_direction(1, 1, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(-1, -1, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(-1, 1, board))
+		res.push_back(coord);
+	for (auto coord : get_all_moves_in_direction(1, -1, board))
+		res.push_back(coord);
+
+	return res;
 }
 
 pieces::Knight::Knight() :
@@ -309,6 +406,20 @@ bool pieces::Knight::movable(coordinate from, coordinate to, const std::vector<s
 	if ((row_d == 2 && col_d == 1) || (row_d == 1 && col_d == 2))
 		return true;
 	return false;
+}
+
+std::list<coordinate> pieces::Knight::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	coordinate cur_pos = this->get_coord();
+	std::list<coordinate> res;
+	std::vector<coordinate> coords{ {cur_pos.row - 2, cur_pos.column + 1}, {cur_pos.row - 1, cur_pos.column + 2},
+									{cur_pos.row + 1, cur_pos.column + 2}, {cur_pos.row + 2, cur_pos.column + 1},
+									{cur_pos.row + 2, cur_pos.column - 1}, {cur_pos.row + 1, cur_pos.column - 2},
+									{cur_pos.row - 1, cur_pos.column - 2}, {cur_pos.row - 2, cur_pos.column - 1} };
+	for (auto coord : coords)
+		if (coord.row >= 0 && coord.row <= 7 && coord.column >= 0 && coord.column <= 7)
+			res.push_back(coord);
+	return res;
 }
 
 pieces::Pawn::Pawn() :
@@ -367,6 +478,29 @@ bool pieces::Pawn::movable(coordinate from, coordinate to, const std::vector<std
 			return false;
 	}
 	return true;
+}
+
+std::list<coordinate> pieces::Pawn::get_all_moves(const std::vector<std::vector<Piece*>> board, move last_move)
+{
+	coordinate cur_pos = this->get_coord();
+	int row_d;
+	if (this->get_color() == white)
+		row_d = -1;
+	else
+		row_d = 1;
+	std::vector<coordinate> moves = { {cur_pos.row + row_d, cur_pos.column},
+									  {cur_pos.row + 2 * row_d, cur_pos.column},
+									  {cur_pos.row + row_d, cur_pos.column + 1},
+									  {cur_pos.row + row_d, cur_pos.column - 1} };
+
+	std::list<coordinate> available_moves;
+	for (auto move : moves)
+		if (move.row >= 0 && move.row <= 7 &&
+			move.column >= 0 && move.column <= 7)
+			if (movable(cur_pos, move, board, last_move))
+				available_moves.push_back(move);
+
+	return available_moves;
 }
 
 bool pieces::Pawn::is_promoting()

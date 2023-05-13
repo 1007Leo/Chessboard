@@ -37,10 +37,13 @@ public:
 private:
 	void render_board();
 	void render_pieces();
+	void render_selected_piece();
+	void render_available_moves();
 	void init_piece(Piece *piece);
 	void center_piece(board_piece* piece, SDL_Point* f_mouse_pos);
 	void center_piece(board_piece* piece, coordinate coord);
 	coordinate pixels_to_coord(SDL_Point pixels_pos);
+	SDL_Point coord_to_pixels(coordinate coord);
 
 	std::string f_type[6] = { "King", "Queen", "Bishop", "Knight", "Rook", "Pawn" };
 	std::string f_color[2] = { "White", "Black" };
@@ -60,5 +63,7 @@ private:
 	int f_cell_size;
 	SDL_Rect f_board_rect;
 	SDL_Texture* f_board_tex;
-	std::list< board_piece > f_pieces;
+	SDL_Texture* f_avlbl_moves_tex;
+	std::list<coordinate> f_available_moves;
+	std::list<board_piece> f_pieces;
 };
