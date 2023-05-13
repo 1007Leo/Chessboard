@@ -8,6 +8,8 @@
 enum e_type { King = 0, Queen = 1, Bishop = 2, Knight = 3, Rook = 4, Pawn = 5 };
 enum e_color { white = 0, black = 1 };
 
+int sgn(int val);
+
 struct coordinate {
 	int row;
 	int column;
@@ -52,11 +54,11 @@ public:
 	virtual bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) { return false; }
 
 	virtual bool is_moved() { return false; }
-	virtual bool is_being_checked() { return false; }
+	virtual Piece* checked_by() { return nullptr; }
 	virtual bool is_promoting() { return false; }
 
 	virtual void set_movement(bool val) {};
-	virtual void set_checking(bool val) {};
+	virtual void set_checking(Piece* val) {};
 	virtual void set_promoting(bool val) {};
 
 protected:
@@ -79,13 +81,13 @@ namespace pieces {
 		bool movable(coordinate from, coordinate to, const std::vector<std::vector<Piece*>> board, move last_move) override;
 
 		bool is_moved() override;
-		bool is_being_checked() override;
+		Piece* checked_by() override;
 		
 		void set_movement(bool val) override;
-		void set_checking(bool val) override;
+		void set_checking(Piece* val) override;
 	private:
 		bool f_moved;
-		bool f_being_checked;
+		Piece* f_checking_piece;
 	};
 
 	class Rook : public Piece {
