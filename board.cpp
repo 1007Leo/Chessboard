@@ -104,6 +104,25 @@ bool Board::move_causing_self_check(coordinate from, coordinate to)
 	return result;
 }
 
+int Board::is_checkmate_or_stalemate()
+{
+	Piece* king = get_piece_by_criteria(King, f_current_turn);
+
+	if (get_available_moves(king).empty())
+	{
+		for (auto&  row : f_game_field)
+			for (auto& el : row)
+			{
+				if (el != nullptr && el->get_color() == f_current_turn && !get_available_moves(el).empty())
+					return 0;
+			}
+		if (king->is_being_checked())
+			return 1;
+		return 2;
+	}
+	return 0;
+}
+
 Piece* Board::temp_move_piece(coordinate from, coordinate to, Piece* pcs_at_first_coord)
 {
 	Piece* saved_piece = this->get_piece_at(to);
@@ -202,6 +221,8 @@ bool Board::make_move(coordinate from, coordinate to)
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
 
+		std::cout << is_checkmate_or_stalemate();
+
 		//print_board();
 
 		return true;
@@ -222,6 +243,20 @@ e_color Board::get_current_turn()
 move Board::get_last_move()
 {
 	return f_last_move;
+}
+
+std::list<coordinate> Board::get_available_moves(Piece* piece)
+{
+	std::list<coordinate> res;
+
+	std::list<coordinate> all_moves = piece->get_all_moves(f_game_field, f_last_move);
+	for (auto move : all_moves)
+	{
+		if (able_to_move(piece->get_coord(), move))
+			res.push_back(move);
+	}
+
+	return res;
 }
 
 void Board::print_board()

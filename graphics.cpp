@@ -106,12 +106,7 @@ void Graphics::handle_events(Board* board)
 					f_selected_piece->rectangle->y = f_mouse_pos.y - f_click_offset.y;
 
 					
-					std::list<coordinate> all_moves = f_selected_piece->piece->get_all_moves(board->get_board(), board->get_last_move());
-					for (auto move : all_moves)
-					{
-						if (board->able_to_move(f_selected_piece->piece->get_coord(), move))
-							f_available_moves.push_back(move);
-					}
+					f_available_moves = board->get_available_moves(f_selected_piece->piece);
 					break;
 				}
 			}
