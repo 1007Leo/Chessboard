@@ -85,7 +85,7 @@ void Graphics::handle_events(Board* board)
 		f_available_moves.clear();
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		if (!f_lmb_down && event.button.button == SDL_BUTTON_LEFT)
+		if (!f_lmb_down && event.button.button == SDL_BUTTON_LEFT && !board->game_over())
 		{
 			f_lmb_down = true;
 			for (auto & piece : f_pieces)

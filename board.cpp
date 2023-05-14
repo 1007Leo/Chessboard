@@ -8,6 +8,7 @@ Board::Board()
 	f_game_field = std::vector < std::vector< Piece* > >(f_length, std::vector< Piece* >(f_width, nullptr));
 	f_current_turn = white;
 	f_last_move = { {-1, -1}, {-1, -1} };
+	f_game_over = false;
 }
 
 void Board::set_piece(Piece* piece)
@@ -80,9 +81,6 @@ void Board::change_king_state_if_check(coordinate from, coordinate to)
 	}
 	
 	enemy_king->set_checking(enemy_king->is_checked_scan(this->f_game_field));
-
-	//std::cout << "Color: " << ally_king->get_color() << ", checked: " << ally_king->is_being_checked() << '\n';
-	//std::cout << "Color: " << enemy_king->get_color() << ", checked: " << enemy_king->is_being_checked() << '\n';
 }
 
 bool Board::move_causing_self_check(coordinate from, coordinate to)
@@ -221,7 +219,8 @@ bool Board::make_move(coordinate from, coordinate to)
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
 
-		std::cout << is_checkmate_or_stalemate();
+		if (is_checkmate_or_stalemate() != 0)
+			finish_game();
 
 		//print_board();
 
@@ -257,6 +256,16 @@ std::list<coordinate> Board::get_available_moves(Piece* piece)
 	}
 
 	return res;
+}
+
+bool Board::game_over()
+{
+	return f_game_over;
+}
+
+void Board::finish_game()
+{
+	f_game_over = true;
 }
 
 void Board::print_board()
