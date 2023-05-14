@@ -132,10 +132,15 @@ Piece* Board::temp_move_piece(coordinate from, coordinate to, Piece* pcs_at_firs
 
 void Board::new_game()
 {
+	f_current_turn = white;
+	f_last_move = { {-1, -1}, {-1, -1} };
+	f_game_over = false;
+
 	for (auto& row : f_game_field)
 		for (auto& cell : row)
 		{
 			delete cell;
+			cell = nullptr;
 		}	
 
 	set_piece(new pieces::King(white, "e1"));
