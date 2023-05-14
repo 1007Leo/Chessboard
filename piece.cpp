@@ -143,12 +143,13 @@ bool pieces::King::movable(coordinate from, coordinate to, const std::vector<std
 	{
 		if (d_castling == 2 && board[from.row][0] != nullptr)
 		{
-			if (board[from.row][0]->get_type() == e_type::Rook && !board[from.row][0]->is_moved())
+			if (board[from.row][0]->get_type() == e_type::Rook && !board[from.row][0]->is_moved() && !is_being_checked())
 				return is_way_blocked(from, coordinate{ from.row, 0 }, board);
 		}
 		else if (d_castling == -2 && board[from.row][7] != nullptr)
 		{
-			if (board[from.row][7]->get_type() == e_type::Rook && !board[from.row][7]->is_moved())
+
+			if (board[from.row][7]->get_type() == e_type::Rook && !board[from.row][7]->is_moved() && !is_being_checked())
 				return is_way_blocked(from, coordinate{ from.row, 7 }, board);
 		}
 	}
