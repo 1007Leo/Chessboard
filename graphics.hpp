@@ -18,6 +18,12 @@ struct board_piece
 	Piece* piece;
 };
 
+struct drawable
+{
+	SDL_Rect* rectangle;
+	SDL_Texture* texture;
+};
+
 class Graphics 
 {
 public:
@@ -35,6 +41,9 @@ public:
 	bool running();
 
 private:
+	SDL_Texture* get_texture(std::string img_name);
+	void draw(drawable object, double rotation = 0);
+
 	void render_board();
 	void render_pieces();
 	void render_selected_piece();
@@ -53,17 +62,17 @@ private:
 	
 	bool f_is_running;
 	e_color f_game_host;
+	int f_cell_size;
 
-	bool f_lmb_down = false;
 	board_piece* f_selected_piece = NULL;
 	SDL_Point f_selected_piece_origin;
 	SDL_Point f_mouse_pos;
 	SDL_Point f_click_offset;
+	bool f_lmb_down = false;
 
-	int f_cell_size;
-	SDL_Rect f_board_rect;
-	SDL_Texture* f_board_tex;
-	SDL_Texture* f_avlbl_moves_tex;
+	drawable f_board_obj;
+	drawable f_avlbl_move_obj;
+
 	std::list<coordinate> f_available_moves;
 	std::list<board_piece> f_pieces;
 };

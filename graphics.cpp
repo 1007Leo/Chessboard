@@ -7,19 +7,22 @@ Graphics::~Graphics()
 		delete piece.piece;
 		delete piece.rectangle;
 	}
+
+	delete f_board_obj.rectangle;
+	delete f_avlbl_move_obj.rectangle;
 }
 
 Graphics::Graphics()
 {
-	f_board_rect = { 100, 100, 600, 600 };
-	f_cell_size = f_board_rect.w / 8;
+	f_board_obj.rectangle = new SDL_Rect{ 100, 100, 600, 600 };
+	f_cell_size = f_board_obj.rectangle->w / 8;
 	f_game_host = white;
 }
 
 Graphics::Graphics(int board_pixel_x, int board_pixel_y, int board_size, e_color host_color)
 {
-	f_board_rect = { board_pixel_x, board_pixel_y, board_size, board_size };
-	f_cell_size = f_board_rect.w / 8;
+	f_board_obj.rectangle = new SDL_Rect{ board_pixel_x, board_pixel_y, board_size, board_size };
+	f_cell_size = f_board_obj.rectangle->w / 8;
 	f_game_host = host_color;
 }
 
@@ -53,6 +56,11 @@ void Graphics::handle_events(Board* board)
 	case SDL_KEYDOWN:
 		if (event.key.keysym.sym == SDLK_ESCAPE)
 			f_is_running = false;
+		if (event.key.keysym.sym == SDLK_F1)
+		{
+			board->new_game();
+			this->init_objects(board->get_board());
+		}
 		break;
 	case SDL_MOUSEMOTION:
 		f_mouse_pos = { event.motion.x, event.motion.y };
@@ -136,9 +144,12 @@ void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix)
 
 void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 {
-	std::string name = BOARD_TEXTURE, moves_name = "SelectedCircle.png";
-	f_board_tex = SDL_CreateTextureFromSurface( f_renderer, IMG_Load( (IMG_PATH + name).c_str() ) );
-	f_avlbl_moves_tex = SDL_CreateTextureFromSurface(f_renderer, IMG_Load((IMG_PATH + moves_name).c_str()));
+	f_selected_piece = NULL;
+	f_pieces.clear();
+	f_available_moves.clear();
+	std::string board_file = BOARD_TEXTURE, avlbl_move_file = "avlbl_move.png";
+	f_board_obj.texture = get_texture(board_file);
+	f_avlbl_move_obj = { new SDL_Rect{0, 0, 20, 20}, get_texture(avlbl_move_file) };
 	
 	for (auto &row : board) 
 	{
@@ -180,41 +191,39 @@ void Graphics::init_piece(Piece* piece)
 {
 	std::string name = f_type[piece->get_type()] + f_color[piece->get_color()] + ".png";
 
-	int posX = piece->get_coord().column * f_cell_size + f_board_rect.x + (int)(0.12 * f_cell_size);
-	int posY = piece->get_coord().row * f_cell_size + f_board_rect.y + (int)(0.12 * f_cell_size);
+	int posX = piece->get_coord().column * f_cell_size + f_board_obj.rectangle->x + (int)(0.12 * f_cell_size);
+	int posY = piece->get_coord().row * f_cell_size + f_board_obj.rectangle->y + (int)(0.12 * f_cell_size);
 	int piece_size = f_cell_size - (int)(f_cell_size * 0.2);
 
 	SDL_Rect* curPiece = new SDL_Rect{ posX, posY, piece_size, piece_size };
-	SDL_Texture* curTex = SDL_CreateTextureFromSurface(f_renderer, IMG_Load((IMG_PATH + name).c_str()));
+	SDL_Texture* curTex = get_texture(name);
 
 	f_pieces.push_back(board_piece{ curPiece, curTex, piece });
 }
 
 void Graphics::render_board()
 {
-	double angle = 0;
+	double rotate = 0;
 	if (f_game_host == black)
-		angle = 180;
-	SDL_RenderCopyEx(f_renderer, f_board_tex, NULL, &f_board_rect, angle, NULL, SDL_FLIP_NONE);
+		rotate = 180;
+	draw(f_board_obj, rotate);
 }
 
 void Graphics::render_available_moves()
 {
-	SDL_Rect avlbl_move_rect{0, 0, 20, 20};
-
 	for (auto pos : f_available_moves)
 	{
 		SDL_Point cur_point = coord_to_pixels(pos);
-		avlbl_move_rect.x = cur_point.x + 25;
-		avlbl_move_rect.y = cur_point.y + 25;
-		SDL_RenderCopy(f_renderer, f_avlbl_moves_tex, NULL, &avlbl_move_rect);
+		f_avlbl_move_obj.rectangle->x = cur_point.x + 25;
+		f_avlbl_move_obj.rectangle->y = cur_point.y + 25;
+		draw(f_avlbl_move_obj);
 	}
 }
 
 void Graphics::render_selected_piece()
 {
 	if (f_selected_piece != nullptr)
-		SDL_RenderCopy(f_renderer, f_selected_piece->texture, NULL, f_selected_piece->rectangle);
+		draw({ f_selected_piece->rectangle, f_selected_piece->texture });
 }
 
 void Graphics::render_pieces()
@@ -223,19 +232,19 @@ void Graphics::render_pieces()
 	{
 		if (piece.piece->is_alive() && &piece != f_selected_piece)
 		{
-			SDL_RenderCopy(f_renderer, piece.texture, NULL, piece.rectangle);
+			draw({piece.rectangle, piece.texture});
 		}
 	}
 }
 
 void Graphics::center_piece(board_piece* piece, SDL_Point* f_mouse_pos)
 {
-	int newX = f_cell_size * ((f_mouse_pos->x - f_board_rect.x) / f_cell_size) + f_board_rect.x + (int)(0.12 * f_cell_size),
-		newY = f_cell_size * ((f_mouse_pos->y - f_board_rect.y) / f_cell_size) + f_board_rect.y + (int)(0.12 * f_cell_size);
-	if (f_mouse_pos->x >= f_board_rect.x &&
-		f_mouse_pos->y >= f_board_rect.y &&
-		f_mouse_pos->x < f_board_rect.x + f_board_rect.w &&
-		f_mouse_pos->y < f_board_rect.y + f_board_rect.h)
+	int newX = f_cell_size * ((f_mouse_pos->x - f_board_obj.rectangle->x) / f_cell_size) + f_board_obj.rectangle->x + (int)(0.12 * f_cell_size),
+		newY = f_cell_size * ((f_mouse_pos->y - f_board_obj.rectangle->y) / f_cell_size) + f_board_obj.rectangle->y + (int)(0.12 * f_cell_size);
+	if (f_mouse_pos->x >= f_board_obj.rectangle->x &&
+		f_mouse_pos->y >= f_board_obj.rectangle->y &&
+		f_mouse_pos->x < f_board_obj.rectangle->x + f_board_obj.rectangle->w &&
+		f_mouse_pos->y < f_board_obj.rectangle->y + f_board_obj.rectangle->h)
 	{
 		piece->rectangle->x = newX;
 		piece->rectangle->y = newY;
@@ -249,8 +258,8 @@ void Graphics::center_piece(board_piece* piece, SDL_Point* f_mouse_pos)
 
 void Graphics::center_piece(board_piece* piece, coordinate coord)
 {
-	int newX = f_cell_size * coord.column + f_board_rect.x + (int)(0.12 * f_cell_size),
-		newY = f_cell_size * coord.row + f_board_rect.y + (int)(0.12 * f_cell_size);
+	int newX = f_cell_size * coord.column + f_board_obj.rectangle->x + (int)(0.12 * f_cell_size),
+		newY = f_cell_size * coord.row + f_board_obj.rectangle->y + (int)(0.12 * f_cell_size);
 
 	if (coord.row >= 0 && coord.row <= 7 &&
 		coord.column >= 0 && coord.column <= 7)
@@ -272,10 +281,28 @@ SDL_Point Graphics::coord_to_pixels(coordinate coord)
 		coord.column = 7 - coord.column;
 	}
 
-	res_point.y = f_board_rect.y + coord.row * f_cell_size;
-	res_point.x = f_board_rect.x + coord.column * f_cell_size;
+	res_point.y = f_board_obj.rectangle->y + coord.row * f_cell_size;
+	res_point.x = f_board_obj.rectangle->x + coord.column * f_cell_size;
 	
 	return res_point;
+}
+
+SDL_Texture* Graphics::get_texture(std::string img_name)
+{
+	SDL_Surface* image = nullptr;
+	SDL_Texture* texture = nullptr;
+
+	image = IMG_Load((IMG_PATH + img_name).c_str());
+	if (image != nullptr) {
+		texture = SDL_CreateTextureFromSurface(f_renderer, image);
+		SDL_FreeSurface(image);
+	}
+	return texture;
+}
+
+void Graphics::draw(drawable object, double rotation)
+{
+	SDL_RenderCopyEx(f_renderer, object.texture, NULL, object.rectangle, rotation, NULL, SDL_FLIP_NONE);
 }
 
 coordinate Graphics::pixels_to_coord(SDL_Point pixels_pos)
@@ -283,13 +310,13 @@ coordinate Graphics::pixels_to_coord(SDL_Point pixels_pos)
 	coordinate res_coord;
 	res_coord.row = -1;
 	res_coord.column = -1;
-	if (pixels_pos.x < f_board_rect.x ||
-		pixels_pos.x >= f_board_rect.x + f_board_rect.w ||
-		pixels_pos.y < f_board_rect.y ||
-		pixels_pos.y >= f_board_rect.y + f_board_rect.h)
+	if (pixels_pos.x < f_board_obj.rectangle->x ||
+		pixels_pos.x >= f_board_obj.rectangle->x + f_board_obj.rectangle->w ||
+		pixels_pos.y < f_board_obj.rectangle->y ||
+		pixels_pos.y >= f_board_obj.rectangle->y + f_board_obj.rectangle->h)
 		return res_coord;
-	res_coord.row = (pixels_pos.y - f_board_rect.y) / f_cell_size;
-	res_coord.column = (pixels_pos.x - f_board_rect.x) / f_cell_size;
+	res_coord.row = (pixels_pos.y - f_board_obj.rectangle->y) / f_cell_size;
+	res_coord.column = (pixels_pos.x - f_board_obj.rectangle->x) / f_cell_size;
 	if (f_game_host == black) 
 	{
 		res_coord.row = 7 - res_coord.row;
