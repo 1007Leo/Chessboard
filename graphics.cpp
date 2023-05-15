@@ -6,6 +6,7 @@ Graphics::~Graphics()
 	for (auto& piece : f_pieces) {
 		delete piece.piece;
 		delete piece.rectangle;
+		SDL_DestroyTexture(piece.texture);
 	}
 
 	delete f_board_obj.rectangle;
@@ -96,7 +97,27 @@ void Graphics::handle_events(Board* board)
 		if (!f_lmb_down && event.button.button == SDL_BUTTON_LEFT && !board->game_over())
 		{
 			f_lmb_down = true;
-			for (auto & piece : f_pieces)
+
+			if (f_piece_selector_is_open)
+			{
+				for (auto& pcs : f_pieces_for_selector)
+				{
+					if (SDL_PointInRect(&f_mouse_pos, pcs.first.rectangle))
+					{
+						for (auto& piece : f_pieces)
+							if (piece.piece == nullptr)
+							{
+								piece.piece = board->initiate_promotion(pcs.second);
+								piece.texture = get_texture(f_type[pcs.second] + f_color[piece.piece->get_color()] + ".png");
+							}
+						f_piece_selector_is_open = false;
+						delete_pieces_for_selector();
+						break;
+					}
+				}
+				break;
+			}
+			for (auto& piece : f_pieces)
 			{
 				if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive() && piece.piece->get_color() == board->get_current_turn())
 				//if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive()) // w/o move order
@@ -129,7 +150,13 @@ void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix)
 {
 	for (auto& piece : f_pieces)
 	{
-		if ( piece.piece->is_alive() && &piece != f_selected_piece)
+		if (piece.piece != nullptr && piece.piece->is_alive() && piece.piece->is_promoting() && !f_piece_selector_is_open)
+		{
+			f_piece_selector_is_open = true;
+			fill_pieces_for_selector(piece.piece->get_color());
+			piece.piece = nullptr;
+		}
+		else if (piece.piece != nullptr &&  piece.piece->is_alive() && &piece != f_selected_piece)
 		{
 			coordinate update_coord = piece.piece->get_coord();
 			if (f_game_host == black)
@@ -144,12 +171,38 @@ void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix)
 
 void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 {
+	if (!f_pieces.empty())
+	{
+		SDL_DestroyTexture(f_board_obj.texture);
+		SDL_DestroyTexture(f_avlbl_move_obj.texture);
+		delete f_avlbl_move_obj.rectangle;
+	}
+
+	for (auto& el : f_pieces)
+	{
+		delete el.rectangle;
+		SDL_DestroyTexture(el.texture);
+		if (!el.piece->is_alive())
+		{
+			delete el.piece;
+			el.piece = nullptr;
+		}
+	}
+
 	f_selected_piece = NULL;
+	f_piece_selector_is_open = false;
 	f_pieces.clear();
 	f_available_moves.clear();
+
 	std::string board_file = BOARD_TEXTURE, avlbl_move_file = "avlbl_move.png";
 	f_board_obj.texture = get_texture(board_file);
 	f_avlbl_move_obj = { new SDL_Rect{0, 0, 20, 20}, get_texture(avlbl_move_file) };
+
+	int width = 4 * (f_cell_size + 20) + 20,
+		hight = f_cell_size + 20;
+	int pos_x = f_board_obj.rectangle->w / 2 + f_board_obj.rectangle->x - width / 2,
+		pos_y = f_board_obj.rectangle->h / 2 + f_board_obj.rectangle->y - hight / 2;
+	f_selector_back = { pos_x , pos_y, width, hight };
 	
 	for (auto &row : board) 
 	{
@@ -171,12 +224,16 @@ void Graphics::render()
 	render_pieces();
 	render_available_moves();
 	render_selected_piece();
+	render_promotion_selector();
 
 	SDL_RenderPresent(f_renderer);
 }
 
 void Graphics::clean()
 {
+	SDL_DestroyTexture(f_avlbl_move_obj.texture);
+	delete_pieces_for_selector();
+
 	SDL_DestroyWindow(f_window);
 	SDL_DestroyRenderer(f_renderer);
 	SDL_Quit();
@@ -201,6 +258,42 @@ void Graphics::init_piece(Piece* piece)
 	f_pieces.push_back(board_piece{ curPiece, curTex, piece });
 }
 
+void Graphics::fill_pieces_for_selector(e_color color)
+{
+	std::string knight = f_type[Knight] + f_color[color] + ".png",
+		bishop = f_type[Bishop] + f_color[color] + ".png",
+		rook = f_type[Rook] + f_color[color] + ".png",
+		queen = f_type[Queen] + f_color[color] + ".png";
+
+	SDL_Texture* t_knight = get_texture(knight),
+		* t_bishop = get_texture(bishop),
+		* t_rook = get_texture(rook),
+		* t_queen = get_texture(queen);
+
+	int pos_x = f_selector_back.x + 20,
+		pos_y = f_selector_back.y + 10;
+
+	SDL_Rect* r_knight = new SDL_Rect{ pos_x, pos_y, f_cell_size, f_cell_size },
+		* r_bishop = new SDL_Rect{ pos_x + f_cell_size + 20, pos_y, f_cell_size, f_cell_size },
+		* r_rook = new SDL_Rect{ pos_x + 2 * (f_cell_size + 20), pos_y, f_cell_size, f_cell_size },
+		* r_queen = new SDL_Rect{ pos_x + 3 * (f_cell_size + 20), pos_y, f_cell_size, f_cell_size };
+
+	f_pieces_for_selector.push_back(std::make_pair(drawable{ r_knight, t_knight }, Knight));
+	f_pieces_for_selector.push_back(std::make_pair(drawable{ r_bishop, t_bishop }, Bishop));
+	f_pieces_for_selector.push_back(std::make_pair(drawable{ r_rook, t_rook }, Rook));
+	f_pieces_for_selector.push_back(std::make_pair(drawable{ r_queen, t_queen }, Queen));
+}
+
+void Graphics::delete_pieces_for_selector()
+{
+	for (auto el : f_pieces_for_selector)
+	{
+		delete el.first.rectangle;
+		SDL_DestroyTexture(el.first.texture);
+	}
+	f_pieces_for_selector.clear();
+}
+
 void Graphics::render_board()
 {
 	double rotate = 0;
@@ -220,6 +313,19 @@ void Graphics::render_available_moves()
 	}
 }
 
+void Graphics::render_promotion_selector()
+{
+	if (f_piece_selector_is_open)
+	{
+		SDL_SetRenderDrawColor(f_renderer, 200, 150, 30, 255);
+		SDL_RenderFillRect(f_renderer, &f_selector_back);
+		for (auto & pcs : f_pieces_for_selector)
+		{
+			draw(pcs.first);
+		}
+	}
+}
+
 void Graphics::render_selected_piece()
 {
 	if (f_selected_piece != nullptr)
@@ -230,7 +336,7 @@ void Graphics::render_pieces()
 {
 	for (auto const& piece : f_pieces)
 	{
-		if (piece.piece->is_alive() && &piece != f_selected_piece)
+		if (piece.piece != nullptr && piece.piece->is_alive() && &piece != f_selected_piece)
 		{
 			draw({piece.rectangle, piece.texture});
 		}
