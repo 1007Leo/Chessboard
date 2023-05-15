@@ -48,7 +48,10 @@ private:
 	void render_pieces();
 	void render_selected_piece();
 	void render_available_moves();
+	void render_promotion_selector();
 	void init_piece(Piece *piece);
+	void fill_pieces_for_selector(e_color color);
+	void delete_pieces_for_selector();
 	void center_piece(board_piece* piece, SDL_Point* f_mouse_pos);
 	void center_piece(board_piece* piece, coordinate coord);
 	coordinate pixels_to_coord(SDL_Point pixels_pos);
@@ -61,6 +64,7 @@ private:
 	SDL_Renderer* f_renderer;
 	
 	bool f_is_running;
+	bool f_piece_selector_is_open = false;
 	e_color f_game_host;
 	int f_cell_size;
 
@@ -72,7 +76,9 @@ private:
 
 	drawable f_board_obj;
 	drawable f_avlbl_move_obj;
+	SDL_Rect f_selector_back;
 
 	std::list<coordinate> f_available_moves;
 	std::list<board_piece> f_pieces;
+	std::list<std::pair<drawable, e_type>> f_pieces_for_selector;
 };

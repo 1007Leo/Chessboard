@@ -52,13 +52,13 @@ void Board::remove_pawn_if_enPassant(coordinate from, coordinate to)
 		
 }
 
-Piece* Board::get_piece_by_criteria(e_type type, e_color color, unsigned int entry)
+Piece* Board::get_piece_by_criteria(e_type type, e_color color, bool is_promoting, unsigned int entry)
 {
 	for (auto& row : f_game_field)
 	{
 		for (auto& el : row)
 		{
-			if (el != nullptr && el->get_type() == type && el->get_color() == color)
+			if (el != nullptr && el->get_type() == type && el->get_color() == color && el->is_promoting() == is_promoting)
 			{
 				if (entry == 0)
 					return el;
@@ -119,6 +119,13 @@ int Board::is_checkmate_or_stalemate()
 		return 2;
 	}
 	return 0;
+}
+
+void Board::change_pawn_state_if_promoting(coordinate to)
+{
+	Piece* cur_piece = get_piece_at(to);
+	if ((to.row == 0 || to.row == 7) && cur_piece->get_type() == Pawn)
+		cur_piece->set_promoting(true);
 }
 
 Piece* Board::temp_move_piece(coordinate from, coordinate to, Piece* pcs_at_first_coord)
@@ -220,6 +227,7 @@ bool Board::make_move(coordinate from, coordinate to)
 		std::swap(f_game_field[from.row][from.column], f_game_field[to.row][to.column]);
 
 		change_king_state_if_check(from, to);
+		change_pawn_state_if_promoting(to);
 
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
@@ -261,6 +269,39 @@ std::list<coordinate> Board::get_available_moves(Piece* piece)
 	}
 
 	return res;
+}
+
+Piece* Board::initiate_promotion(e_type piece_type)
+{
+	e_color piece_color = (e_color)((f_current_turn + 1) % 2);
+	Piece* cur_piece = get_piece_by_criteria(Pawn, piece_color, true);
+	coordinate piece_coord = cur_piece->get_coord();
+
+	delete cur_piece;
+
+	switch (piece_type)
+	{
+	case King:
+		break;
+	case Queen:
+		set_piece(new pieces::Queen(piece_color, Piece::coord_to_notation(piece_coord)));
+		break;
+	case Bishop:
+		set_piece(new pieces::Bishop(piece_color, Piece::coord_to_notation(piece_coord)));
+		break;
+	case Knight:
+		set_piece(new pieces::Knight(piece_color, Piece::coord_to_notation(piece_coord)));
+		break;
+	case Rook:
+		set_piece(new pieces::Rook(piece_color, Piece::coord_to_notation(piece_coord)));
+		break;
+	case Pawn:
+		break;
+	default:
+		break;
+	}
+
+	return get_piece_at(piece_coord);
 }
 
 bool Board::game_over()

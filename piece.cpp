@@ -55,7 +55,7 @@ void Piece::set_alive(bool val)
 
 std::string Piece::coord_to_notation(coordinate coord)
 {
-	std::string pos = "";
+	std::string pos = "  ";
 	pos[0] = 'a' + coord.column;
 	pos[1] = 8 - coord.row + '0';
 	return pos;
