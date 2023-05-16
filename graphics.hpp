@@ -3,12 +3,22 @@
 #include <list>
 #include <vector>
 
-#include "SDL.h"
-#include "SDL_image.h"
+#if defined(__unix)
+	#include "SDL2/SDL.h"
+	#include "SDL2/SDL_image.h"
+#else
+	#include "SDL.h"
+	#include "SDL_image.h"
+#endif
 
 #include "board.hpp"
 
-#define IMG_PATH "res\\Textures\\"
+#if defined (__unix)
+	#define IMG_PATH "res/Textures/"
+#else 
+	#define IMG_PATH "res\\Textures\\"
+#endif
+
 #define BOARD_TEXTURE "Board2.png"
 
 struct board_piece 
