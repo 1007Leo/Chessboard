@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	while (graphics.running()) 
 	{
 		graphics.handle_events(&board, &engine);
-		graphics.update(board.get_board());
+		graphics.update(board.get_board(), board.get_current_turn());
 		graphics.render(board.game_over());
 	}
 	graphics.clean();

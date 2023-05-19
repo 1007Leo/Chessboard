@@ -25,11 +25,17 @@
 
 #define BOARD_TEXTURE "Board2.png"
 
+enum e_render_state {not_rendered = 0, rendered = 1, pending = 2};
+
 struct board_piece 
 {
 	SDL_Rect* rectangle;
 	SDL_Texture* texture;
-	Piece* piece;
+
+	e_type type;
+	e_color color;
+	coordinate coord;
+	e_render_state render_state = not_rendered;
 };
 
 struct drawable
@@ -47,7 +53,7 @@ public:
 
 	bool init(const char* title, int xpos, int ypos, int width, int height);
 	void handle_events(Board* board, ChessEngineProvider* engine);
-	void update(const std::vector< std::vector< Piece* > >& board_matrix);
+	void update(const std::vector< std::vector< Piece* > >& board_matrix, e_color current_turn);
 	void init_objects(const std::vector< std::vector< Piece* > >& board);
 	void render(bool is_game_over);
 	void clean();

@@ -360,7 +360,8 @@ bool Board::make_move(coordinate from, coordinate to)
 		
 		if (f_game_field[to.row][to.column] != nullptr)
 		{
-			f_game_field[to.row][to.column]->set_alive(false);
+			//f_game_field[to.row][to.column]->set_alive(false);
+			delete f_game_field[to.row][to.column];
 			f_game_field[to.row][to.column] = nullptr;
 		}
 

@@ -4,7 +4,6 @@
 Graphics::~Graphics()
 {
 	for (auto& piece : f_pieces) {
-		delete piece.piece;
 		delete piece.rectangle;
 		SDL_DestroyTexture(piece.texture);
 	}
@@ -190,12 +189,7 @@ void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 				{
 					if (SDL_PointInRect(&f_mouse_pos, pcs.first.rectangle))
 					{
-						for (auto& piece : f_pieces)
-							if (piece.piece == nullptr)
-							{
-								piece.piece = board->initiate_promotion(pcs.second);
-								piece.texture = get_texture(f_type[pcs.second] + f_color[piece.piece->get_color()] + ".png");
-							}
+						init_piece(board->initiate_promotion(pcs.second));
 						f_piece_selector_is_open = false;
 						delete_pieces_for_selector();
 						break;
@@ -205,7 +199,7 @@ void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 			}
 			for (auto& piece : f_pieces)
 			{
-				bool can_grab = SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive();
+				bool can_grab = SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.render_state == rendered;
 				if (engine->is_running() && board->get_current_turn() != this->f_game_host) {
 					// engine->get_best_move(board->get_fen_notation(), 20);
 					can_grab = can_grab && piece.piece->get_color() == this->f_game_host;
@@ -231,7 +225,7 @@ void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 					f_selected_piece->rectangle->y = f_mouse_pos.y - f_click_offset.y;
 
 					
-					f_available_moves = board->get_available_moves(f_selected_piece->piece);
+					f_available_moves = board->get_available_moves(board->get_piece_at(f_selected_piece->coord));
 					break;
 				}
 			}
@@ -242,27 +236,37 @@ void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 	}
 }
 
-void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix)
+void Graphics::update(const std::vector< std::vector< Piece* > > &board_matrix, e_color current_turn)
 {
-	for (auto& piece : f_pieces)
-	{
-		if (piece.piece != nullptr && piece.piece->is_alive() && piece.piece->is_promoting() && !f_piece_selector_is_open)
+	for (auto& gr_piece : f_pieces)
+		gr_piece.render_state = not_rendered;
+
+	for (auto& row : board_matrix)
+		for (auto& piece : row)
 		{
-			f_piece_selector_is_open = true;
-			fill_pieces_for_selector(piece.piece->get_color());
-			piece.piece = nullptr;
-		}
-		else if (piece.piece != nullptr &&  piece.piece->is_alive() && &piece != f_selected_piece)
-		{
-			coordinate update_coord = piece.piece->get_coord();
-			if (f_game_host == black)
+			if (piece != nullptr)
 			{
-				update_coord.row = 7 - update_coord.row;
-				update_coord.column = 7 - update_coord.column;
+				if (piece->is_promoting() && !f_piece_selector_is_open)
+				{
+					f_piece_selector_is_open = true;
+					fill_pieces_for_selector(piece->get_color());
+				}
+
+				for (auto& gr_piece : f_pieces)
+				{
+					if (gr_piece.render_state != pending && gr_piece.type == piece->get_type() && gr_piece.color == piece->get_color())
+					{
+						if (gr_piece.coord != piece->get_coord())
+						{
+							gr_piece.coord = piece->get_coord();
+							center_piece(&gr_piece, gr_piece.coord);
+						}
+						gr_piece.render_state = pending;
+						break;
+					}
+				}
 			}
-			center_piece(&piece, update_coord);
 		}
-	}
 }
 
 void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
@@ -278,11 +282,6 @@ void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 	{
 		delete el.rectangle;
 		SDL_DestroyTexture(el.texture);
-		if (!el.piece->is_alive())
-		{
-			delete el.piece;
-			el.piece = nullptr;
-		}
 	}
 
 	f_selected_piece = NULL;
@@ -355,7 +354,7 @@ void Graphics::init_piece(Piece* piece)
 	SDL_Rect* curPiece = new SDL_Rect{ posX, posY, piece_size, piece_size };
 	SDL_Texture* curTex = get_texture(name);
 
-	f_pieces.push_back(board_piece{ curPiece, curTex, piece });
+	f_pieces.push_back(board_piece{ curPiece, curTex, piece->get_type(), piece->get_color(), piece->get_coord() });
 }
 
 void Graphics::fill_pieces_for_selector(e_color color)
@@ -454,16 +453,20 @@ void Graphics::render_text()
 void Graphics::render_selected_piece()
 {
 	if (f_selected_piece != nullptr)
+	{
 		draw({ f_selected_piece->rectangle, f_selected_piece->texture });
+		f_selected_piece->render_state = rendered;
+	}
 }
 
 void Graphics::render_pieces()
 {
-	for (auto const& piece : f_pieces)
+	for (auto & piece : f_pieces)
 	{
-		if (piece.piece != nullptr && piece.piece->is_alive() && &piece != f_selected_piece)
+		if (piece.render_state == pending)
 		{
 			draw({piece.rectangle, piece.texture});
+			piece.render_state = rendered;
 		}
 	}
 }
