@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	while (graphics.running()) 
 	{
 		graphics.handle_events(&board);
-		graphics.update(board.get_board());
+		graphics.update(board.get_board(), board.get_current_turn());
 		graphics.render();
 	}
 	graphics.clean();

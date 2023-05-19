@@ -21,11 +21,17 @@
 
 #define BOARD_TEXTURE "Board2.png"
 
+enum e_render_state {not_rendered = 0, rendered = 1, pending = 2};
+
 struct board_piece 
 {
 	SDL_Rect* rectangle;
 	SDL_Texture* texture;
-	Piece* piece;
+
+	e_type type;
+	e_color color;
+	coordinate coord;
+	e_render_state render_state = not_rendered;
 };
 
 struct drawable
@@ -43,7 +49,7 @@ public:
 
 	bool init(const char* title, int xpos, int ypos, int width, int height);
 	void handle_events(Board* board);
-	void update(const std::vector< std::vector< Piece* > >& board_matrix);
+	void update(const std::vector< std::vector< Piece* > >& board_matrix, e_color current_turn);
 	void init_objects(const std::vector< std::vector< Piece* > >& board);
 	void render();
 	void clean();
@@ -59,7 +65,7 @@ private:
 	void render_selected_piece();
 	void render_available_moves();
 	void render_promotion_selector();
-	void init_piece(Piece *piece);
+	void init_piece(Piece* piece);
 	void fill_pieces_for_selector(e_color color);
 	void delete_pieces_for_selector();
 	void center_piece(board_piece* piece, SDL_Point* f_mouse_pos);
