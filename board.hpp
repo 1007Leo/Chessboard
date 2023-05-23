@@ -5,6 +5,7 @@
 class Board {
 public:
 	Board();
+	~Board();
 
 	void new_game();
 	bool make_move(coordinate from, coordinate to);

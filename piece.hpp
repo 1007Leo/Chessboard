@@ -4,7 +4,8 @@
 #include <vector>
 #include <list>
 
-enum e_type { King = 0, Queen = 1, Bishop = 2, Knight = 3, Rook = 4, Pawn = 5 };
+//don't change the order
+enum e_type { Knight = 0, Bishop = 1, Rook = 2, Queen = 3, King = 4, Pawn = 5 };
 enum e_color { white = 0, black = 1 };
 
 int sgn(int val);
