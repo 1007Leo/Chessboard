@@ -11,6 +11,21 @@ Board::Board()
 	f_game_over = false;
 }
 
+Board::~Board()
+{
+	for (auto& row : f_game_field)
+	{
+		for (auto& piece : row)
+		{
+			if (piece != nullptr)
+			{
+				delete piece;
+				piece = nullptr;
+			}
+		}
+	}
+}
+
 void Board::set_piece(Piece* piece)
 {
 	f_game_field[piece->get_coord().row][piece->get_coord().column] = piece;
@@ -376,7 +391,7 @@ bool Board::make_move(coordinate from, coordinate to)
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
 
-		if (is_checkmate_or_stalemate() != 0)
+		if (is_checkmate_or_stalemate())
 			finish_game();
 
 		//print_board();
@@ -445,7 +460,8 @@ Piece* Board::initiate_promotion(e_type piece_type)
 	default:
 		break;
 	}
-
+	if (is_checkmate_or_stalemate())
+		finish_game();
 	return get_piece_at(piece_coord);
 }
 
