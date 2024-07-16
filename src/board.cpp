@@ -11,20 +11,20 @@ Board::Board()
 	f_game_over = false;
 }
 
-Board::~Board()
-{
-	for (auto& row : f_game_field)
-	{
-		for (auto& piece : row)
-		{
-			if (piece != nullptr)
-			{
-				delete piece;
-				piece = nullptr;
-			}
-		}
-	}
-}
+//Board::~Board()
+//{
+//	for (auto& row : f_game_field)
+//	{
+//		for (auto& piece : row)
+//		{
+//			if (piece != nullptr)
+//			{
+//				delete piece;
+//				piece = nullptr;
+//			}
+//		}
+//	}
+//}
 
 void Board::set_piece(Piece* piece)
 {
@@ -172,7 +172,7 @@ bool Board::move_causing_self_check(coordinate from, coordinate to)
 	return result;
 }
 
-int Board::is_checkmate_or_stalemate()
+e_mate_type Board::is_checkmate_or_stalemate()
 {
 	Piece* king = get_piece_by_criteria(King, f_current_turn);
 
@@ -182,13 +182,13 @@ int Board::is_checkmate_or_stalemate()
 			for (auto& el : row)
 			{
 				if (el != nullptr && el->get_color() == f_current_turn && !get_available_moves(el).empty())
-					return 0;
+					return none;
 			}
 		if (king->is_being_checked())
-			return 1;
-		return 2;
+			return checkmate;
+		return stalemate;
 	}
-	return 0;
+	return none;
 }
 
 void Board::change_pawn_state_if_promoting(coordinate to)
@@ -213,41 +213,70 @@ void Board::new_game()
 	f_last_move = { {-1, -1}, {-1, -1} };
 	f_game_over = false;
 
+	f_pieces.clear();
+
 	for (auto& row : f_game_field)
 		for (auto& cell : row)
 		{
-			delete cell;
 			cell = nullptr;
 		}	
 
-	set_piece(new pieces::King(white, "e1"));
-	set_piece(new pieces::King(black, "e8"));
+	f_pieces.push_back(std::make_unique<pieces::King>(pieces::King(white, "e1")));
+	f_pieces.push_back(std::make_unique<pieces::King>(pieces::King(black, "e8")));
 
-	set_piece(new pieces::Queen(white, "d1"));
-	set_piece(new pieces::Queen(black, "d8"));
+	f_pieces.push_back(std::make_unique<pieces::Queen>(pieces::Queen(white, "d1")));
+	f_pieces.push_back(std::make_unique<pieces::Queen>(pieces::Queen(black, "d8")));
 
-	set_piece(new pieces::Rook(white, "a1"));
+	f_pieces.push_back(std::make_unique<pieces::Rook>(pieces::Rook(white, "a1")));
+	f_pieces.push_back(std::make_unique<pieces::Rook>(pieces::Rook(white, "h1")));
+	f_pieces.push_back(std::make_unique<pieces::Rook>(pieces::Rook(black, "a8")));
+	f_pieces.push_back(std::make_unique<pieces::Rook>(pieces::Rook(black, "h8")));
+
+	f_pieces.push_back(std::make_unique<pieces::Bishop>(pieces::Bishop(white, "c1")));
+	f_pieces.push_back(std::make_unique<pieces::Bishop>(pieces::Bishop(white, "f1")));
+	f_pieces.push_back(std::make_unique<pieces::Bishop>(pieces::Bishop(black, "c8")));
+	f_pieces.push_back(std::make_unique<pieces::Bishop>(pieces::Bishop(black, "f8")));
+
+	f_pieces.push_back(std::make_unique<pieces::Knight>(pieces::Knight(white, "b1")));
+	f_pieces.push_back(std::make_unique<pieces::Knight>(pieces::Knight(white, "g1")));
+	f_pieces.push_back(std::make_unique<pieces::Knight>(pieces::Knight(black, "b8")));
+	f_pieces.push_back(std::make_unique<pieces::Knight>(pieces::Knight(black, "g8")));
+	
+	//set_piece(new pieces::King(white, "e1"));
+	//set_piece(new pieces::King(black, "e8"));
+
+	//set_piece(new pieces::Queen(white, "d1"));
+	//set_piece(new pieces::Queen(black, "d8"));
+
+	/*set_piece(new pieces::Rook(white, "a1"));
 	set_piece(new pieces::Rook(white, "h1"));
 	set_piece(new pieces::Rook(black, "a8"));
-	set_piece(new pieces::Rook(black, "h8"));
+	set_piece(new pieces::Rook(black, "h8"));*/
 
-	set_piece(new pieces::Bishop(white, "c1"));
+	/*set_piece(new pieces::Bishop(white, "c1"));
 	set_piece(new pieces::Bishop(white, "f1"));
 	set_piece(new pieces::Bishop(black, "c8"));
-	set_piece(new pieces::Bishop(black, "f8"));
+	set_piece(new pieces::Bishop(black, "f8"));*/
 
-	set_piece(new pieces::Knight(white, "b1"));
+	/*set_piece(new pieces::Knight(white, "b1"));
 	set_piece(new pieces::Knight(white, "g1"));
 	set_piece(new pieces::Knight(black, "b8"));
-	set_piece(new pieces::Knight(black, "g8"));
+	set_piece(new pieces::Knight(black, "g8"));*/
 
 	std::string pos = "a2";
 	for (int i = 0; i < f_width; i++) {
-		set_piece(new pieces::Pawn(white, pos));
+		//set_piece(new pieces::Pawn(white, pos));
+		f_pieces.push_back(std::make_unique<pieces::Pawn>(pieces::Pawn(white, pos)));
 		pos[1] += 5;
-		set_piece(new pieces::Pawn(black, pos));
+		//set_piece(new pieces::Pawn(black, pos));
+		f_pieces.push_back(std::make_unique<pieces::Pawn>(pieces::Pawn(black, pos)));
 		pos[0]++;
 		pos[1] -= 5;
+	}
+
+	for (auto& piece : f_pieces)
+	{
+		set_piece(piece.get());
 	}
 
 	std::cout << this->get_fen_notation() << std::endl;
@@ -376,7 +405,7 @@ bool Board::make_move(coordinate from, coordinate to)
 		if (f_game_field[to.row][to.column] != nullptr)
 		{
 			//f_game_field[to.row][to.column]->set_alive(false);
-			delete f_game_field[to.row][to.column];
+			//delete f_game_field[to.row][to.column];
 			f_game_field[to.row][to.column] = nullptr;
 		}
 
@@ -437,7 +466,9 @@ Piece* Board::initiate_promotion(e_type piece_type)
 	Piece* cur_piece = get_piece_by_criteria(Pawn, piece_color, true);
 	coordinate piece_coord = cur_piece->get_coord();
 
-	delete cur_piece;
+	//delete cur_piece;//!!!
+
+	//cur_piece->set_alive(false);
 
 	switch (piece_type)
 	{

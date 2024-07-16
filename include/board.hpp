@@ -2,6 +2,8 @@
 #include <vector>
 #include "piece.hpp"
 
+const enum e_mate_type { none = 0, checkmate = 1, stalemate = 2};
+
 struct fen_params {
 	bool WQ_castle = true;
 	bool WK_castle = true;
@@ -17,7 +19,7 @@ struct fen_params {
 class Board {
 public:
 	Board();
-	~Board();
+	//~Board();
 
 	void new_game();
 	bool make_move(coordinate from, coordinate to);
@@ -49,7 +51,7 @@ private:
 	void remove_pawn_if_enPassant(coordinate from, coordinate to);
 	void change_king_state_if_check(coordinate from, coordinate to);
 	void change_pawn_state_if_promoting(coordinate to);
-	int is_checkmate_or_stalemate();
+	e_mate_type is_checkmate_or_stalemate();
 
 	bool move_causing_self_check(coordinate from, coordinate to);
 	Piece* get_piece_by_criteria(e_type type, e_color color, bool is_promoting = false, unsigned int entry = 0);
@@ -63,5 +65,6 @@ private:
 
 	fen_params f_fen_params;
 
+	std::list<std::unique_ptr<Piece>> f_pieces;
 	std::vector< std::vector< Piece * > > f_game_field;
 };
