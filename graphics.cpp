@@ -25,12 +25,10 @@ void graphics::Texture_Operator::draw(SDL_Rect* rect, SDL_Texture* tex, SDL_Rend
 
 graphics::Scene::Scene()
 {
-	f_el_board = Element_Board();
 }
 
 graphics::Scene::Scene(e_color game_host)
 {
-	f_el_board = Element_Board();
 	f_game_host = game_host;
 }
 
@@ -123,8 +121,11 @@ void graphics::Scene::handle_events()
 			if (f_el_promotion_selector.is_open())
 			{
 				graphic_piece* selected = f_el_promotion_selector.get_selectetd(&f_mouse_pos);
-				f_el_pieces.init_piece(f_logic_board.initiate_promotion(selected->type), f_game_host);
-				f_el_promotion_selector.set_open(false);
+				if (selected != nullptr)
+				{
+					f_el_pieces.init_piece(f_logic_board.initiate_promotion(selected->type), f_game_host);
+					f_el_promotion_selector.set_open(false);
+				}
 				break;
 			}
 			for (auto& piece : f_el_pieces.get_all_pieces())
