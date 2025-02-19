@@ -1,14 +1,4 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/ChessboardGit.vcxproj.filters
-/SDL2_image.dll
-/SDL2.dll
-/ChessboardGit.vcxproj.user
-/ChessboardGit.vcxproj
-/ChessboardGit.sln
-/x64/Release
-/x64/Debug
-/.vs
-/SDL2_ttf.dll
+﻿/.vs
+libs/*
+!libs/.gitkeep
+/build
