@@ -12,6 +12,7 @@
 #endif
 
 #include "board.hpp"
+#include "chess_engine_provider.hpp"
 
 #if defined (__unix)
 	#define IMG_PATH "res/Textures/"
@@ -42,7 +43,7 @@ public:
 	~Graphics();
 
 	bool init(const char* title, int xpos, int ypos, int width, int height);
-	void handle_events(Board* board);
+	void handle_events(Board* board, ChessEngineProvider* engine);
 	void update(const std::vector< std::vector< Piece* > >& board_matrix);
 	void init_objects(const std::vector< std::vector< Piece* > >& board);
 	void render();
@@ -77,6 +78,8 @@ private:
 	bool f_piece_selector_is_open = false;
 	e_color f_game_host;
 	int f_cell_size;
+
+	e_type f_prom_type = e_type::Null;
 
 	board_piece* f_selected_piece = NULL;
 	SDL_Point f_selected_piece_origin;

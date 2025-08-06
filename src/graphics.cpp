@@ -43,11 +43,76 @@ bool Graphics::init(const char* title, int xpos, int ypos, int width, int height
 	return f_is_running;
 }
 
-void Graphics::handle_events(Board* board)
+void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 {
 	SDL_Delay(10);
 	SDL_Event event;
 	SDL_PollEvent(&event);
+
+	// chess engine routine
+
+	if (engine->is_running() && board->get_current_turn() != this->f_game_host && !engine->is_evaluating() && !f_piece_selector_is_open) {
+		std::string best_move = engine->get_best_move();
+		if (best_move == "") {
+			engine->start_evaluating(board->get_fen_notation(), 2);
+		}
+		else if (best_move == "(none)\r") {
+			engine->stop();
+		}
+		else {
+			move engine_move = move{
+				Piece::notation_to_coord(best_move.substr(0, 2)),
+				Piece::notation_to_coord(best_move.substr(2, 2))
+				};
+			
+			if (board->make_move(engine_move.from, engine_move.to)) {
+				SDL_Point pos = coord_to_pixels(engine_move.to);
+				for (auto& piece : f_pieces) {
+					if (SDL_PointInRect(&pos, piece.rectangle)) {
+						center_piece(&piece, engine_move.to);
+						break;
+					}
+				}
+			}
+
+			// promoting move
+			if (best_move.size() >= 5) {
+				switch (best_move[4])
+				{
+				case 'b':
+					f_prom_type = e_type::Bishop;
+					break;
+				case 'n':
+					f_prom_type = e_type::Knight;
+					break;
+				case 'r':
+					f_prom_type = e_type::Rook;
+					break;
+				case 'q':
+					f_prom_type = e_type::Queen;
+					break;
+
+				default:
+					f_prom_type = e_type::Null;
+					break;
+				}
+			}
+		}
+	}
+
+	if (f_prom_type != e_type::Null) {
+		for (auto& piece : f_pieces)
+			if (piece.piece == nullptr) {
+				piece.piece = board->initiate_promotion(f_prom_type);
+				piece.texture = get_texture(f_type[f_prom_type] + f_color[piece.piece->get_color()] + ".png");
+				f_piece_selector_is_open = false;
+				delete_pieces_for_selector();
+				f_prom_type = e_type::Null;
+				break;
+			}
+	}
+
+	// envent handler
 
 	switch (event.type)
 	{
@@ -60,8 +125,20 @@ void Graphics::handle_events(Board* board)
 		if (event.key.keysym.sym == SDLK_F1)
 		{
 			board->new_game();
+			engine->start(); // TODO: make this dependant of the setting
 			this->init_objects(board->get_board());
 		}
+#ifdef DEBUG
+		if (event.key.keysym.sym == SDLK_F2)
+		{
+			if (!engine->is_running())
+				engine->start();
+			else
+			{
+				engine->stop();
+			}
+		}
+#endif
 		break;
 	case SDL_MOUSEMOTION:
 		f_mouse_pos = { event.motion.x, event.motion.y };
@@ -76,8 +153,10 @@ void Graphics::handle_events(Board* board)
 		if (f_lmb_down && event.button.button == SDL_BUTTON_LEFT)
 		{
 			if (f_selected_piece != NULL)
-			{
-				if (board->make_move(pixels_to_coord(f_selected_piece_origin), pixels_to_coord(f_mouse_pos)))
+			{	
+				bool can_let_go = (engine->is_running()) ? board->get_current_turn() == this->f_game_host : true;
+				if ( can_let_go &&
+					board->make_move(pixels_to_coord(f_selected_piece_origin), pixels_to_coord(f_mouse_pos)))
 				{
 					center_piece(f_selected_piece, &f_mouse_pos);
 				}
@@ -119,8 +198,18 @@ void Graphics::handle_events(Board* board)
 			}
 			for (auto& piece : f_pieces)
 			{
-				if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive() && piece.piece->get_color() == board->get_current_turn())
+				bool can_grab = SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive();
+				if (engine->is_running() && board->get_current_turn() != this->f_game_host) {
+					// engine->get_best_move(board->get_fen_notation(), 20);
+					can_grab = can_grab && piece.piece->get_color() == this->f_game_host;
+					// can_grab = can_grab && piece.piece->get_color() == board->get_current_turn();
+				}
+				else {
+					can_grab = can_grab && piece.piece->get_color() == board->get_current_turn();
+				}
+				//if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive() && piece.piece->get_color() == board->get_current_turn())
 				//if (SDL_PointInRect(&f_mouse_pos, piece.rectangle) && piece.piece->is_alive()) // w/o move order
+				if (can_grab)
 				{
 					f_selected_piece = &piece;
 					f_selected_piece_origin.x = piece.rectangle->x;
@@ -225,6 +314,7 @@ void Graphics::render()
 	render_available_moves();
 	render_selected_piece();
 	render_promotion_selector();
+	
 
 	SDL_RenderPresent(f_renderer);
 }
@@ -315,7 +405,7 @@ void Graphics::render_available_moves()
 
 void Graphics::render_promotion_selector()
 {
-	if (f_piece_selector_is_open)
+	if (f_piece_selector_is_open && f_prom_type == e_type::Null)
 	{
 		SDL_SetRenderDrawColor(f_renderer, 200, 150, 30, 255);
 		SDL_RenderFillRect(f_renderer, &f_selector_back);

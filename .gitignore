@@ -1,4 +1,7 @@
 ﻿/.vs
+/.vscode
+/build
 libs/*
 !libs/.gitkeep
-/build
+/res/engine/*
+!/res/engine/.gitkeep

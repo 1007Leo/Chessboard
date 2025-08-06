@@ -2,6 +2,18 @@
 #include <vector>
 #include "piece.hpp"
 
+struct fen_params {
+	bool WQ_castle = true;
+	bool WK_castle = true;
+	bool BQ_castle = true;
+	bool BK_castle = true;
+
+	std::string enPassant_pos = " -";
+
+	int halfmoves = 0;
+	int fullmoves = 1;
+};
+
 class Board {
 public:
 	Board();
@@ -21,11 +33,16 @@ public:
 	Piece* get_piece_at(coordinate coord);
 	bool able_to_move(coordinate from, coordinate to);
 
-	// Debug
+	std::string get_fen_notation();
+
+#ifdef DEBUG
 	void print_board();
+#endif
 
 private:
 	void set_piece(Piece* piece);
+
+	void update_fen_params(coordinate from, coordinate to);
 
 	void move_rook_if_castling(coordinate from, coordinate to);
 	void remove_pawn_if_enPassant(coordinate from, coordinate to);
@@ -42,6 +59,8 @@ private:
 	e_color f_current_turn;
 	move f_last_move;
 	bool f_game_over;
+
+	fen_params f_fen_params;
 
 	std::vector< std::vector< Piece * > > f_game_field;
 };

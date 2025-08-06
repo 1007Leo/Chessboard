@@ -16,6 +16,61 @@ void Board::set_piece(Piece* piece)
 	f_game_field[piece->get_coord().row][piece->get_coord().column] = piece;
 }
 
+void Board::update_fen_params(coordinate from, coordinate to)
+{
+	Piece* from_piece = this->get_piece_at(from);
+	Piece* to_piece = this->get_piece_at(to);
+
+	// move counters
+	this->f_fen_params.halfmoves++;
+	if (from_piece->get_type() == e_type::Pawn || to_piece != nullptr) {
+		this->f_fen_params.halfmoves = 0;
+	}
+	if (this->f_current_turn == e_color::black) {
+		this->f_fen_params.fullmoves++;
+	}
+
+	// enPassant check
+	if (from_piece->get_type() == e_type::Pawn &&
+		abs(from.row - to.row) == 2) {
+			coordinate coord = {(from.row + to.row) / 2, from.column};
+			std::string pos_notation = " " + Piece::coord_to_notation(coord);
+			this->f_fen_params.enPassant_pos = pos_notation;
+			// this->f_fen_params.enPassant_pos = {(from.row + to.row) / 2, from.column};
+		}
+	// castle check king
+	else if (from_piece->get_type() == e_type::King && from_piece->is_moved() == false) {
+		if (from_piece->get_color() == e_color::white) {
+			this->f_fen_params.WQ_castle = false;
+			this->f_fen_params.WK_castle = false;
+		}
+		else {
+			this->f_fen_params.BQ_castle = false;
+			this->f_fen_params.BK_castle = false;
+		}
+	}
+	// castle check rooks
+	else if (from_piece->get_type() == e_type::Rook && from_piece->is_moved() == false) {
+		if (from_piece->get_color() == e_color::white) {
+			if (from.column == 0) {
+				this->f_fen_params.WQ_castle = false;
+			}
+			else {
+				this->f_fen_params.WK_castle = false;
+			}
+		}
+		else {
+			if (from.column == 0) {
+				this->f_fen_params.BQ_castle = false;
+			}
+			else {
+				this->f_fen_params.BK_castle = false;
+			}
+		}
+	}
+
+}
+
 void Board::move_rook_if_castling(coordinate from, coordinate to)
 {
 	if (get_piece_at(from)->get_type() == King && abs(from.column - to.column) == 2)
@@ -179,6 +234,8 @@ void Board::new_game()
 		pos[0]++;
 		pos[1] -= 5;
 	}
+
+	std::cout << this->get_fen_notation() << std::endl;
 }
 
 Piece* Board::get_piece_at(coordinate coord)
@@ -207,10 +264,96 @@ bool Board::able_to_move(coordinate from, coordinate to)
 	return !move_causing_self_check(from, to);
 }
 
+std::string Board::get_fen_notation()
+{
+	// Starting position
+	// "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+	// pieces position
+	std::string fen_pos = "";
+	for (auto& row: this->f_game_field){
+		int empty = 0;
+		for (auto& piece: row) {
+			if (piece == nullptr)
+				empty++;
+			else {
+				char piece_symbol;
+				if (empty > 0) {
+					fen_pos += empty + '0';
+					empty = 0;
+				}
+				switch (piece->get_type())
+				{
+				case e_type::Bishop:
+					piece_symbol = 'b';
+					break;
+				case e_type::King:
+					piece_symbol = 'k';
+					break;
+				case e_type::Knight:
+					piece_symbol = 'n';
+					break;
+				case e_type::Pawn:
+					piece_symbol = 'p';
+					break;
+				case e_type::Queen:
+					piece_symbol = 'q';
+					break;
+				case e_type::Rook:
+					piece_symbol = 'r';
+					break;
+				default:
+					break;
+				}
+
+				if (piece->get_color() == e_color::white) {
+					piece_symbol = std::toupper(piece_symbol);
+				}
+				fen_pos += piece_symbol;
+			}
+		}
+		if (empty > 0) {
+			fen_pos += empty + '0';
+			empty = 0;
+		}
+		fen_pos += "/";
+	}
+
+	// cur turn color
+	fen_pos[fen_pos.size() - 1] = ' ';
+	fen_pos += (this->get_current_turn() == e_color::white) ? 'w':'b';
+
+	// castle availability 
+	std::string castles = " ";
+	if (this->f_fen_params.WK_castle)
+		castles += "K";
+	if (this->f_fen_params.WQ_castle)
+		castles += "Q";
+	if (this->f_fen_params.BK_castle)
+		castles += "k";
+	if (this->f_fen_params.BQ_castle)
+		castles += "q";
+
+	fen_pos += (castles == "") ? " -" : castles;
+
+	// enPassant coord
+	fen_pos += this->f_fen_params.enPassant_pos;
+	this->f_fen_params.enPassant_pos = " -";
+
+	// halfmoves(after capture or pawn move)
+	// fullmoves(after black turn)
+	fen_pos += ' ' + std::to_string(this->f_fen_params.halfmoves);
+	fen_pos += ' ' + std::to_string(this->f_fen_params.fullmoves);
+
+    return fen_pos;
+}
+
 bool Board::make_move(coordinate from, coordinate to)
 {
 	if (able_to_move(from, to))
 	{
+		update_fen_params(from, to);
+
 		remove_pawn_if_enPassant(from, to);
 		move_rook_if_castling(from, to);
 		
@@ -236,6 +379,7 @@ bool Board::make_move(coordinate from, coordinate to)
 			finish_game();
 
 		//print_board();
+		// std::cout << this->get_fen_notation() << std::endl;
 
 		return true;
 	}
@@ -314,6 +458,7 @@ void Board::finish_game()
 	f_game_over = true;
 }
 
+#ifdef DEBUG
 void Board::print_board()
 {
 	for (int i = 0; i < f_length; i++) {
@@ -371,3 +516,4 @@ void Board::print_board()
 	}
 	std::cout << '\n';
 }
+#endif
