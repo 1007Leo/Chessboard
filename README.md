@@ -8,15 +8,18 @@ You can download the [latest release](https://github.com/1007Leo/Chessboard/rele
 ### Requirements:
 * [Cmake](https://cmake.org/download/)
 * [SDL2](https://github.com/libsdl-org/SDL/releases) and [SDL2-image](https://github.com/libsdl-org/SDL_image/releases) (devel-2.x.x version)
+* [Boost](https://www.boost.org/releases/1.86.0/) (1.86 or earlier)
 * Visual Studio or standalone build tools (like [w64devkit](https://github.com/skeeto/w64devkit))
 
-Extract SDL libraries to the libs folder (eg. `libs/SDL2-2.x.x` `libs/SDL2_images-2.x.x`), create the build folder and run following commands from within it:
+Extract SDL and Boost libraries to the libs folder (eg. `libs/SDL2-2.x.x` `libs/SDL2_images-2.x.x` `libs/boost_1_86_0`). You can either use prebult version of boost or buld it yourself. <b>MSVC prebuilt libraries won't work with MinGW generator.</b> Then create the build folder and run the following commands from within it:
 ### Windows
-1. `cmake ..` for default generator\
-   `cmake .. -G "Visual Studio 17 2022"` for VS\
+1. `cmake ..` for your default generator\
+   `cmake .. -G "Visual Studio 17 2022"` or other versions for VS\
    `cmake .. -G "MinGW Makefiles"` for MinGW
 
-2. `cmake --build .` or open the solution and build it in Visual Studio
+2. `cmake --build . --config=Release` or open the solution and build it in Visual Studio
+
+Or alternatively, you can run the `run.bat` with `-r` for release and `-d` for debug.
 <!-- ### Linux
 1. Work in progress -->
 
