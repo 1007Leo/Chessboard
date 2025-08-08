@@ -28,15 +28,16 @@ int main(int argc, char** argv)
 
 	Graphics graphics = Graphics(BOARD_PIXEL_X, BOARD_PIXEL_Y, BOARD_SIZE, GAME_HOST);
 
-	if (!graphics.init("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HIGHT))
-		std::cout << "Error";
+	if (!graphics.init("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HIGHT)) {
+		std::cout << "Graphics init error";
+	}
 	graphics.init_objects(board.get_board());
 
 	while (graphics.running()) 
 	{
 		graphics.handle_events(&board, &engine);
 		graphics.update(board.get_board());
-		graphics.render();
+		graphics.render(board.game_over());
 	}
 	graphics.clean();
 

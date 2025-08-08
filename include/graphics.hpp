@@ -6,13 +6,16 @@
 #if defined(__unix)
 	#include "SDL2/SDL.h"
 	#include "SDL2/SDL_image.h"
+	#include "SDL2/SDL_ttf.h"
 #else
 	#include "SDL.h"
 	#include "SDL_image.h"
+	#include "SDL_ttf.h"
 #endif
 
 #include "board.hpp"
 #include "chess_engine_provider.hpp"
+#include "text.hpp"
 
 #if defined (__unix)
 	#define IMG_PATH "res/Textures/"
@@ -46,7 +49,7 @@ public:
 	void handle_events(Board* board, ChessEngineProvider* engine);
 	void update(const std::vector< std::vector< Piece* > >& board_matrix);
 	void init_objects(const std::vector< std::vector< Piece* > >& board);
-	void render();
+	void render(bool is_game_over);
 	void clean();
 
 	bool running();
@@ -60,6 +63,9 @@ private:
 	void render_selected_piece();
 	void render_available_moves();
 	void render_promotion_selector();
+	void render_game_over_plate(bool is_game_over);
+	void render_text();
+
 	void init_piece(Piece *piece);
 	void fill_pieces_for_selector(e_color color);
 	void delete_pieces_for_selector();
@@ -73,6 +79,8 @@ private:
 
 	SDL_Window* f_window;
 	SDL_Renderer* f_renderer;
+
+	Text f_text;
 	
 	bool f_is_running;
 	bool f_piece_selector_is_open = false;

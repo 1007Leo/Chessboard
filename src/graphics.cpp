@@ -29,17 +29,22 @@ Graphics::Graphics(int board_pixel_x, int board_pixel_y, int board_size, e_color
 
 bool Graphics::init(const char* title, int xpos, int ypos, int width, int height)
 {
+	bool sdl_ok = false, ttf_ok = false;
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0)
 	{
 		f_window = SDL_CreateWindow(title, xpos, ypos, width, height, SDL_WINDOW_SHOWN);
 		f_renderer = SDL_CreateRenderer(f_window, -1, 0);
 
-		if (!f_window || !f_renderer)
-			f_is_running = false;
-		else
-			f_is_running = true;
-		
+		if (f_window && f_renderer)
+			sdl_ok = true;		
 	}
+	if (TTF_Init() == 0) {
+		ttf_ok = true;
+		f_text = Text(f_renderer);
+	}
+
+	f_is_running = sdl_ok && ttf_ok;
+
 	return f_is_running;
 }
 
@@ -127,6 +132,8 @@ void Graphics::handle_events(Board* board, ChessEngineProvider* engine)
 			board->new_game();
 			engine->start(); // TODO: make this dependant of the setting
 			this->init_objects(board->get_board());
+			f_text.deactivate_textfield("game_over");
+			f_text.deactivate_textfield("new_game");
 		}
 #ifdef DEBUG
 		if (event.key.keysym.sym == SDLK_F2)
@@ -303,7 +310,7 @@ void Graphics::init_objects(const std::vector< std::vector< Piece* > >& board)
 	}
 }
 
-void Graphics::render()
+void Graphics::render(bool is_game_over)
 {
 	SDL_SetRenderDrawColor(f_renderer, 0, 0, 0, 255);
 	SDL_RenderClear(f_renderer);
@@ -314,6 +321,8 @@ void Graphics::render()
 	render_available_moves();
 	render_selected_piece();
 	render_promotion_selector();
+	render_game_over_plate(is_game_over);
+	render_text();
 	
 
 	SDL_RenderPresent(f_renderer);
@@ -326,6 +335,7 @@ void Graphics::clean()
 
 	SDL_DestroyWindow(f_window);
 	SDL_DestroyRenderer(f_renderer);
+	TTF_Quit();
 	SDL_Quit();
 }
 
@@ -413,6 +423,31 @@ void Graphics::render_promotion_selector()
 		{
 			draw(pcs.first);
 		}
+	}
+}
+
+void Graphics::render_game_over_plate(bool is_game_over)
+{
+	if (is_game_over) {
+		SDL_SetRenderDrawColor(f_renderer, 128, 128, 128, 255);
+		SDL_Rect game_over_plate = { 
+			f_board_obj.rectangle->x + f_cell_size * 2, 
+			f_board_obj.rectangle->y + f_cell_size * 3, 
+			f_cell_size*4, 
+			f_cell_size*2};
+
+		f_text.new_textfield("game_over", "GAME OVER", game_over_plate.x + f_cell_size/2, game_over_plate.y + 10, 3*f_cell_size, f_cell_size, 80);
+		f_text.new_textfield("new_game", "Press F1 to start again", game_over_plate.x + f_cell_size/2, game_over_plate.y + f_cell_size*1.25, 3*f_cell_size, 30, 40);
+
+		SDL_RenderFillRect(f_renderer, &game_over_plate);
+	}
+}
+
+void Graphics::render_text()
+{
+	for (auto &textfield: *f_text.get_textfields()) {
+		if (textfield.active)
+			draw({textfield.rectangle, textfield.texture});
 	}
 }
 

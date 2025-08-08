@@ -23,6 +23,7 @@ set(Boost_USE_STATIC_LIBS ON)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
+find_package(SDL2_ttf REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/include/*.hpp")
@@ -30,7 +31,7 @@ file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS} include)
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${SDL2_LIBRARIES} SDL2_image::SDL2_image)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${SDL2_LIBRARIES} SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf)
 
 set(_sdl_arch_subdir "x86")
 if(CMAKE_SIZEOF_VOID_P STREQUAL "8")
@@ -38,9 +39,11 @@ if(CMAKE_SIZEOF_VOID_P STREQUAL "8")
 endif()
 
 get_filename_component(SDL2_IMAGE_LIB_DIR "${SDL2_image_DIR}" DIRECTORY)
+get_filename_component(SDL2_TTF_LIB_DIR "${SDL2_ttf_DIR}" DIRECTORY)
 
 set(SDL2_DLL_PATH "${SDL2_BINDIR}/SDL2.dll")
 set(SDL2_IMAGE_DLL_PATH "${SDL2_IMAGE_LIB_DIR}/lib/${_sdl_arch_subdir}/SDL2_image.dll")
+set(SDL2_TTF_DLL_PATH "${SDL2_TTF_LIB_DIR}/lib/${_sdl_arch_subdir}/SDL2_ttf.dll")
 
 # Set debug define
 target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG>)
@@ -54,6 +57,12 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${SDL2_IMAGE_DLL_PATH}
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${SDL2_TTF_DLL_PATH}
         $<TARGET_FILE_DIR:${PROJECT_NAME}>
 )
 
