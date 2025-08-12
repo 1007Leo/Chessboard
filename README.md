@@ -26,3 +26,4 @@ Or alternatively, you can run the `run.bat` with `-r` for release and `-d` for d
 # Third-party sources
 * [JohnPablok Cburnett Chess](https://opengameart.org/content/chess-pieces-and-board-squares)
 * [Default](https://font.download/font/default) font
+* [Stockfish](https://stockfishchess.org/) engine
