@@ -409,6 +409,8 @@ bool Board::make_move(coordinate from, coordinate to)
 		{
 			//f_game_field[to.row][to.column]->set_alive(false);
 			//delete f_game_field[to.row][to.column];
+			//f_game_field[to.row][to.column]->set_alive(false);
+			//delete f_game_field[to.row][to.column];
 			f_game_field[to.row][to.column] = nullptr;
 		}
 
@@ -423,6 +425,7 @@ bool Board::make_move(coordinate from, coordinate to)
 		f_current_turn = (e_color)((f_current_turn + 1) % 2);
 		f_last_move = {from, to};
 
+		if (is_checkmate_or_stalemate())
 		if (is_checkmate_or_stalemate())
 			finish_game();
 
