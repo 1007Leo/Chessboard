@@ -74,6 +74,40 @@ void ChessEngineProvider::stop()
 #endif
 }
 
+std::pair<move, e_type> ChessEngineProvider::string_to_move(std::string best_move)
+{
+    move engine_move = move{
+        Piece::notation_to_coord(best_move.substr(0, 2)),
+        Piece::notation_to_coord(best_move.substr(2, 2))
+        };
+
+    // promoting move
+    e_type prom_type = e_type::Null;
+    if (best_move.size() >= 5) {
+        switch (best_move[4])
+        {
+        case 'b':
+            prom_type = e_type::Bishop;
+            break;
+        case 'n':
+            prom_type = e_type::Knight;
+            break;
+        case 'r':
+            prom_type = e_type::Rook;
+            break;
+        case 'q':
+            prom_type = e_type::Queen;
+            break;
+
+        default:
+            prom_type = e_type::Null;
+            break;
+        }
+    }
+
+    return std::pair<move, e_type>(engine_move, prom_type);
+}
+
 std::string ChessEngineProvider::get_best_move()
 {
     std::string res = f_best_move;

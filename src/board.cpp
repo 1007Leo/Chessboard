@@ -298,6 +298,9 @@ bool Board::able_to_move(coordinate from, coordinate to)
 	Piece* from_piece = get_piece_at(from);
 	Piece* to_piece = get_piece_at(to);
 
+	// if (from_piece->get_color() != f_current_turn)
+	// 	return false;
+
 	if (from_piece != nullptr && to_piece != nullptr)
 		if (from_piece->get_color() == to_piece->get_color()) 
 			return false;
@@ -466,7 +469,7 @@ Piece* Board::initiate_promotion(e_type piece_type)
 	Piece* cur_piece = get_piece_by_criteria(Pawn, piece_color, true);
 	coordinate piece_coord = cur_piece->get_coord();
 
-	//delete cur_piece;//!!!
+	delete cur_piece;//!!!
 
 	//cur_piece->set_alive(false);
 
@@ -496,7 +499,7 @@ Piece* Board::initiate_promotion(e_type piece_type)
 	return get_piece_at(piece_coord);
 }
 
-bool Board::game_over()
+bool Board::is_game_over()
 {
 	return f_game_over;
 }

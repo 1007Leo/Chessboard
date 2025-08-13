@@ -30,7 +30,7 @@ public:
 	std::list<coordinate> get_available_moves(Piece* piece);
 	Piece* initiate_promotion(e_type piece_type);
 
-	bool game_over();
+	bool is_game_over();
 	void finish_game();
 
 	Piece* get_piece_at(coordinate coord);
@@ -66,5 +66,5 @@ private:
 	fen_params f_fen_params;
 
 	std::list<std::unique_ptr<Piece>> f_pieces;
-	std::vector< std::vector< Piece * > > f_game_field;
+	std::vector< std::vector< Piece * > > f_game_field; // TODO: change vectors to arrays
 };

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <deque>
+// #include "Board.hpp"
 #include "piece.hpp"
 
 namespace bprocess = boost::process;
@@ -20,6 +21,8 @@ public:
     bool is_running();
     void start();
     void stop();
+
+    std::pair<move, e_type> string_to_move(std::string best_move);
 
     std::string get_best_move();
     void start_evaluating(std::string fen_pos, int depth);

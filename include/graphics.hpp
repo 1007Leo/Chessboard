@@ -16,7 +16,6 @@
 
 #include "board.hpp"
 #include "chess_engine_provider.hpp"
-#include "text.hpp"
 
 #if defined (__unix)
 	#define IMG_PATH "res/Textures/"
@@ -144,14 +143,58 @@ namespace graphics
 		std::list<graphic_piece> f_pieces_for_selector;
 	};
 
+	struct textfield {
+		std::string field_name;
+		std::string text;
+		bool active = true;
+		drawable textfield_obj;
+	};
+
+	class Element_Textfields : Texture_Operator
+	{
+	public:
+		bool init(SDL_Renderer* renderer);
+		void render();
+		void clean();
+
+		void new_textfield(std::string field_name, std::string text, int x, int y, int w, int h, int size, bool active = true);
+		void activate_textfield(std::string field_name);
+		void deactivate_textfield(std::string field_name);
+		void delete_textfield(std::string field_name);
+
+		textfield* find_textfield(std::string field_name);
+    	std::list<textfield>* get_textfields();
+
+	private:
+		std::list<textfield> f_textfields;
+		SDL_Renderer* f_renderer;
+	};
+
+	struct color {
+		int r, g, b, a;
+	};
+
+	class Element_Gameover_Plate {
+	public:
+		bool init(int x, int y, color color, int cell_size, Element_Textfields* textfields, SDL_Renderer* renderer);
+		void render(bool game_over);
+		void clean();
+	private:
+		color f_background_color;
+		SDL_Rect f_background;
+		Element_Textfields* f_textfields;
+		SDL_Renderer* f_renderer;
+	};
+
 	class Scene
 	{
 	public:
 		Scene();
-		Scene(e_color game_host);
+		Scene(e_color game_host, ChessEngineProvider* engine, bool game_with_engine);
 
 		bool init_SDL(const char* title, int xpos, int ypos, int width, int hight);
 		bool init_objects();
+		void handle_engine();
 		void handle_events();
 		void update();
 		void render();
@@ -164,6 +207,7 @@ namespace graphics
 		SDL_Point coord_to_pixels(coordinate coord);
 
 		Board f_logic_board;
+		ChessEngineProvider* f_engine;
 
 		SDL_Window* f_window;
 		SDL_Renderer* f_renderer;
@@ -182,5 +226,7 @@ namespace graphics
 		Element_Pieces f_el_pieces;
 		Element_Available_Moves f_el_available_moves;
 		Element_Promotion_Selector f_el_promotion_selector;
+		Element_Textfields f_el_textfields;
+		Element_Gameover_Plate f_el_gameover_plate;
 	};
 }
