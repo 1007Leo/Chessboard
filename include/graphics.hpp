@@ -3,6 +3,7 @@
 #include <list>
 #include <vector>
 #include <memory>
+#include <map>
 
 #if defined(__unix)
 	#include "SDL2/SDL.h"
@@ -144,7 +145,6 @@ namespace graphics
 	};
 
 	struct textfield {
-		std::string field_name;
 		std::string text;
 		bool active = true;
 		drawable textfield_obj;
@@ -163,10 +163,10 @@ namespace graphics
 		void delete_textfield(std::string field_name);
 
 		textfield* find_textfield(std::string field_name);
-    	std::list<textfield>* get_textfields();
+    	std::map<std::string, textfield>* get_textfields();
 
 	private:
-		std::list<textfield> f_textfields;
+		std::map<std::string, textfield> f_textfields;
 		SDL_Renderer* f_renderer;
 	};
 

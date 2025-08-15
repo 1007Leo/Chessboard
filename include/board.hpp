@@ -53,7 +53,6 @@ private:
 	void change_king_state_if_check(coordinate from, coordinate to);
 	void change_pawn_state_if_promoting(coordinate to);
 	e_mate_type is_checkmate_or_stalemate();
-	e_mate_type is_checkmate_or_stalemate();
 
 	bool move_causing_self_check(coordinate from, coordinate to);
 	Piece* get_piece_by_criteria(e_type type, e_color color, bool is_promoting = false, unsigned int entry = 0);

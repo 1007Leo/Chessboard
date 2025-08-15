@@ -239,7 +239,7 @@ bool graphics::Element_Textfields::init(SDL_Renderer *renderer)
 
 void graphics::Element_Textfields::render()
 {
-	for (auto &textfield: f_textfields) {
+	for (auto& [textfield_name, textfield]: f_textfields) {
 		if (textfield.active)
 			draw(&textfield.textfield_obj, f_renderer);
 	}
@@ -248,7 +248,7 @@ void graphics::Element_Textfields::render()
 void graphics::Element_Textfields::clean()
 {
 	for (auto it = f_textfields.begin(); it != f_textfields.end(); it++) {
-		SDL_DestroyTexture(it->textfield_obj.texture);
+		SDL_DestroyTexture(it->second.textfield_obj.texture);
 		it = f_textfields.erase(it);
 	}
 }
@@ -270,14 +270,11 @@ void graphics::Element_Textfields::new_textfield(std::string field_name, std::st
     SDL_Surface* surf = TTF_RenderUTF8_Blended(font, text.c_str(), white);
     SDL_Texture* tex = SDL_CreateTextureFromSurface(f_renderer, surf);
 	
-    f_textfields.push_back(
-		textfield(
-			field_name, 
+	f_textfields[field_name] = textfield(
 			text, 
 			active, 
 			{std::make_unique<SDL_Rect>(SDL_Rect{x, y, w, h}), tex}
-		)
-	);
+		);
     
     TTF_CloseFont(font);
 }
@@ -302,25 +299,18 @@ void graphics::Element_Textfields::deactivate_textfield(std::string field_name)
 
 void graphics::Element_Textfields::delete_textfield(std::string field_name)
 {
-    for (auto it = f_textfields.begin(); it != f_textfields.end(); it++) {
-        if (it->field_name == field_name) {
-            SDL_DestroyTexture(it->textfield_obj.texture);
-            it = f_textfields.erase(it);
-            break;
-        }
-    }
+	f_textfields.erase(field_name);
 }
 
 graphics::textfield* graphics::Element_Textfields::find_textfield(std::string field_name)
 {
-    for (auto &field: f_textfields) {
-        if (field.field_name == field_name)
-            return &field;
-    }
-    return nullptr;
+	if (f_textfields.contains(field_name)) {
+		return &f_textfields[field_name];
+	}
+	return nullptr;
 }
 
-std::list<graphics::textfield>* graphics::Element_Textfields::get_textfields()
+std::map<std::string, graphics::textfield>* graphics::Element_Textfields::get_textfields()
 {
 	return &f_textfields;
 }
