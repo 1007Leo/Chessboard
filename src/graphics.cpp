@@ -1,22 +1,22 @@
 #include <iostream>
 #include "graphics.hpp"
 
-SDL_Texture* graphics::Texture_Operator::create_texture(std::string img_name, SDL_Renderer* renderer)
+std::unique_ptr<SDL_Texture, graphics::sdl_deleter> graphics::Texture_Operator::create_texture(std::string img_name, SDL_Renderer* renderer)
 {
-	SDL_Surface* image = nullptr;
-	SDL_Texture* texture = nullptr;
+	std::unique_ptr<SDL_Surface, sdl_deleter> image;
+	std::unique_ptr<SDL_Texture, sdl_deleter> texture;
 
-	image = IMG_Load((IMG_PATH + img_name).c_str());
-	if (image != nullptr) {
-		texture = SDL_CreateTextureFromSurface(renderer, image);
-		SDL_FreeSurface(image);
-	}
+	image = std::unique_ptr<SDL_Surface, sdl_deleter>(IMG_Load((IMG_PATH + img_name).c_str()));
+	assert(("Error: no image. Check image path.", image.get() != nullptr));
+	
+	texture = std::unique_ptr<SDL_Texture, sdl_deleter>(SDL_CreateTextureFromSurface(renderer, image.get()), sdl_deleter());
+	
 	return texture;
 }
 
 void graphics::Texture_Operator::draw(drawable* object, SDL_Renderer* renderer, double rotation)
 {
-	SDL_RenderCopyEx(renderer, object->texture, NULL, object->rectangle.get(), rotation, NULL, SDL_FLIP_NONE);
+	SDL_RenderCopyEx(renderer, object->texture.get(), NULL, object->rectangle.get(), rotation, NULL, SDL_FLIP_NONE);
 }
 
 void graphics::Texture_Operator::draw(SDL_Rect* rect, SDL_Texture* tex, SDL_Renderer* renderer, double rotation)
@@ -145,8 +145,8 @@ void graphics::Scene::handle_events()
 
 		if (f_lmb_down && f_el_pieces.get_selected() != nullptr)
 		{
-			f_el_pieces.get_selected()->rectangle.get()->x = f_mouse_pos.x - f_click_offset.x;
-			f_el_pieces.get_selected()->rectangle.get()->y = f_mouse_pos.y - f_click_offset.y;
+			f_el_pieces.get_selected()->piece_obj.rectangle.get()->x = f_mouse_pos.x - f_click_offset.x;
+			f_el_pieces.get_selected()->piece_obj.rectangle.get()->y = f_mouse_pos.y - f_click_offset.y;
 		}
 		break;
 	case SDL_MOUSEBUTTONUP:
@@ -162,8 +162,8 @@ void graphics::Scene::handle_events()
 				else
 					f_el_pieces.center_piece(f_el_pieces.get_selected(), f_el_pieces.get_selected_origin());
 
-				f_el_pieces.get_selected()->rectangle.get()->h -= 10;
-				f_el_pieces.get_selected()->rectangle.get()->w -= 10;
+				f_el_pieces.get_selected()->piece_obj.rectangle.get()->h -= 10;
+				f_el_pieces.get_selected()->piece_obj.rectangle.get()->w -= 10;
 
 				f_el_pieces.set_selected(nullptr);
 			}
@@ -187,22 +187,22 @@ void graphics::Scene::handle_events()
 			}
 			for (auto& piece : f_el_pieces.get_all_pieces())
 			{
-				if (SDL_PointInRect(&f_mouse_pos, piece.get()->rectangle.get())
+				if (SDL_PointInRect(&f_mouse_pos, piece.get()->piece_obj.rectangle.get())
 					&& piece.get()->render_state == rendered
 					&& piece.get()->color == ((f_engine->is_running()) ? f_game_host : f_logic_board.get_current_turn())
 				)
 				{
 					f_el_pieces.set_selected(piece.get());
-					f_el_pieces.set_selected_origin({ piece.get()->rectangle.get()->x,  piece.get()->rectangle.get()->y });
+					f_el_pieces.set_selected_origin({ piece.get()->piece_obj.rectangle.get()->x,  piece.get()->piece_obj.rectangle.get()->y });
 
-					f_el_pieces.get_selected()->rectangle.get()->w += 10;
-					f_el_pieces.get_selected()->rectangle.get()->h += 10;
+					f_el_pieces.get_selected()->piece_obj.rectangle.get()->w += 10;
+					f_el_pieces.get_selected()->piece_obj.rectangle.get()->h += 10;
 
-					f_click_offset.x = piece.get()->rectangle.get()->w / 2 - 2;
-					f_click_offset.y = piece.get()->rectangle.get()->h / 2 - 2;
+					f_click_offset.x = piece.get()->piece_obj.rectangle.get()->w / 2 - 2;
+					f_click_offset.y = piece.get()->piece_obj.rectangle.get()->h / 2 - 2;
 
-					f_el_pieces.get_selected()->rectangle.get()->x = f_mouse_pos.x - f_click_offset.x;
-					f_el_pieces.get_selected()->rectangle.get()->y = f_mouse_pos.y - f_click_offset.y;
+					f_el_pieces.get_selected()->piece_obj.rectangle.get()->x = f_mouse_pos.x - f_click_offset.x;
+					f_el_pieces.get_selected()->piece_obj.rectangle.get()->y = f_mouse_pos.y - f_click_offset.y;
 
 					std::list<SDL_Point> moves_positions;
 					for (auto& coord : f_logic_board.get_available_moves(f_logic_board.get_piece_at(f_el_pieces.get_selected()->coord)))
@@ -247,10 +247,7 @@ void graphics::Element_Textfields::render()
 
 void graphics::Element_Textfields::clean()
 {
-	for (auto it = f_textfields.begin(); it != f_textfields.end(); it++) {
-		SDL_DestroyTexture(it->second.textfield_obj.texture);
-		it = f_textfields.erase(it);
-	}
+	f_textfields.clear();
 }
 
 void graphics::Element_Textfields::new_textfield(std::string field_name, std::string text, int x, int y, int w, int h, int size, bool active)
@@ -265,18 +262,20 @@ void graphics::Element_Textfields::new_textfield(std::string field_name, std::st
 	std::string font_path = "res\\fonts\\default.otf";
 #endif
     
-    TTF_Font* font = TTF_OpenFont(font_path.c_str(), size);
+    auto font = std::unique_ptr<TTF_Font, sdl_deleter>(TTF_OpenFont(font_path.c_str(), size), sdl_deleter());
+	assert(("Error: no font. Check font path.", font.get() != nullptr));
+
     SDL_Color white = { 255, 255, 255, 255 };
-    SDL_Surface* surf = TTF_RenderUTF8_Blended(font, text.c_str(), white);
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(f_renderer, surf);
+    auto surf = std::unique_ptr<SDL_Surface, sdl_deleter>(TTF_RenderUTF8_Blended(font.get(), text.c_str(), white));
 	
 	f_textfields[field_name] = textfield(
 			text, 
 			active, 
-			{std::make_unique<SDL_Rect>(SDL_Rect{x, y, w, h}), tex}
+			{
+				std::make_unique<SDL_Rect>(SDL_Rect{x, y, w, h}), 
+				std::unique_ptr<SDL_Texture, sdl_deleter>(SDL_CreateTextureFromSurface(f_renderer, surf.get()), sdl_deleter())
+			}
 		);
-    
-    TTF_CloseFont(font);
 }
 
 void graphics::Element_Textfields::activate_textfield(std::string field_name)
@@ -334,7 +333,6 @@ void graphics::Scene::render()
 
 void graphics::Scene::clean_objects()
 {
-	f_el_board.clean();
 	f_el_pieces.clean();
 	f_el_available_moves.clean();
 	f_el_promotion_selector.clean();
@@ -395,7 +393,7 @@ SDL_Point graphics::Scene::coord_to_pixels(coordinate coord)
 
 int graphics::Element_Board::size()
 {
-	return f_board.rectangle->w;
+	return f_board_obj.rectangle->w;
 }
 
 int graphics::Element_Board::cell_size()
@@ -405,16 +403,16 @@ int graphics::Element_Board::cell_size()
 
 const SDL_Rect* graphics::Element_Board::origin()
 {
-	return f_board.rectangle.get();
+	return f_board_obj.rectangle.get();
 }
 
 bool graphics::Element_Board::init(int x, int y, int size, std::string texture_name, SDL_Renderer* renderer)
 {
 	f_renderer = renderer;
-	f_board.rectangle = std::make_unique<SDL_Rect>(SDL_Rect{ x,y,size,size });
+	f_board_obj.rectangle = std::make_unique<SDL_Rect>(SDL_Rect{ x,y,size,size });
 	f_cell_size = size / 8;
-	f_board.texture = create_texture(texture_name, renderer);
-	if (f_board.texture == nullptr)
+	f_board_obj.texture = create_texture(texture_name, renderer);
+	if (f_board_obj.texture == nullptr)
 		return false;
 	return true;
 }
@@ -424,12 +422,7 @@ void graphics::Element_Board::render(e_color game_host)
 	double rotate = 0;
 	if (game_host == black)
 		rotate = 180;
-	draw(&f_board, f_renderer, rotate);
-}
-
-void graphics::Element_Board::clean()
-{
-	SDL_DestroyTexture(f_board.texture);
+	draw(&f_board_obj, f_renderer, rotate);
 }
 
 bool graphics::Element_Pieces::init(const std::vector<std::vector<Piece*>>& board, e_color host, Element_Board* gr_board, SDL_Renderer* renderer)
@@ -483,7 +476,7 @@ void graphics::Element_Pieces::render_all()
 	{
 		if (piece->render_state == pending)
 		{
-			draw(piece->rectangle.get(), piece->texture, f_renderer);
+			draw(piece->piece_obj.rectangle.get(), piece->piece_obj.texture.get(), f_renderer);
 			piece->render_state = rendered;
 		}
 	}
@@ -493,15 +486,13 @@ void graphics::Element_Pieces::render_selected()
 {
 	if (f_selected_piece != nullptr)
 	{
-		draw(f_selected_piece->rectangle.get(), f_selected_piece->texture, f_renderer);
+		draw(f_selected_piece->piece_obj.rectangle.get(), f_selected_piece->piece_obj.texture.get(), f_renderer);
 		f_selected_piece->render_state = rendered;
 	}
 }
 
 void graphics::Element_Pieces::clean()
 {
-	for (auto& piece : f_pieces)
-		SDL_DestroyTexture(piece.get()->texture);
 	f_pieces.clear();
 }
 
@@ -542,14 +533,14 @@ bool graphics::Element_Pieces::init_piece(Piece* piece, e_color host)
 	int posY = piece_coord.row * cell_size + f_gr_board->origin()->y + (int)(0.12 * cell_size);
 	int piece_size = cell_size - (int)(cell_size * 0.2);
 
-	SDL_Texture* curTex = create_texture(name, f_renderer);
-	if (curTex == nullptr)
-		return false;
+	auto curTex = create_texture(name, f_renderer);
 
 	std::unique_ptr<graphic_piece> cur_gr_pc = std::make_unique<graphic_piece> ( 
 		graphic_piece{ 
-			std::make_unique<SDL_Rect>(SDL_Rect{ posX, posY, piece_size, piece_size }), 
-			curTex, 
+			{
+				std::make_unique<SDL_Rect>(SDL_Rect{ posX, posY, piece_size, piece_size }),
+				std::move(curTex)
+			},
 			piece->get_type(), 
 			piece->get_color(), 
 			piece->get_coord()
@@ -576,8 +567,8 @@ void graphics::Element_Pieces::center_piece(graphic_piece* gr_piece, coordinate 
 	if (coord.row >= 0 && coord.row <= 7 &&
 		coord.column >= 0 && coord.column <= 7)
 	{
-		gr_piece->rectangle.get()->x = newX;
-		gr_piece->rectangle.get()->y = newY;
+		gr_piece->piece_obj.rectangle.get()->x = newX;
+		gr_piece->piece_obj.rectangle.get()->y = newY;
 	}
 }
 
@@ -593,13 +584,13 @@ void graphics::Element_Pieces::center_piece(graphic_piece* gr_piece, SDL_Point* 
 		point->x < board_origin->x + f_gr_board->size() &&
 		point->y < board_origin->y + f_gr_board->size())
 	{
-		gr_piece->rectangle.get()->x = newX;
-		gr_piece->rectangle.get()->y = newY;
+		gr_piece->piece_obj.rectangle.get()->x = newX;
+		gr_piece->piece_obj.rectangle.get()->y = newY;
 	}
 	else
 	{
-		gr_piece->rectangle.get()->x = f_selected_piece_origin.x;
-		gr_piece->rectangle.get()->y = f_selected_piece_origin.y;
+		gr_piece->piece_obj.rectangle.get()->x = f_selected_piece_origin.x;
+		gr_piece->piece_obj.rectangle.get()->y = f_selected_piece_origin.y;
 	}
 }
 
@@ -611,10 +602,9 @@ std::list<std::unique_ptr<graphics::graphic_piece>>& graphics::Element_Pieces::g
 bool graphics::Element_Available_Moves::init(int size, std::string texture_name, SDL_Renderer* renderer)
 {
 	f_renderer = renderer;
-	SDL_Texture* tex = create_texture(texture_name, renderer);
-	if (tex == nullptr)
-		return false;
-	f_moves_highlight = { std::make_unique<SDL_Rect> (SDL_Rect{ 0, 0, size, size }), tex};
+	auto tex = create_texture(texture_name, renderer);
+
+	f_moves_highlight = { std::make_unique<SDL_Rect> (SDL_Rect{ 0, 0, size, size }), std::move(tex)};
 	return true;
 }
 
@@ -675,15 +665,13 @@ void graphics::Element_Promotion_Selector::render(e_color color)
 		for (auto& pcs : f_pieces_for_selector)
 		{
 			if (pcs.color == color)
-				draw(pcs.rectangle.get(), pcs.texture, f_renderer);
+				draw(pcs.piece_obj.rectangle.get(), pcs.piece_obj.texture.get(), f_renderer);
 		}
 	}
 }
 
 void graphics::Element_Promotion_Selector::clean()
 {
-	for (auto& piece : f_pieces_for_selector)
-		SDL_DestroyTexture(piece.texture);
 	f_pieces_for_selector.clear();
 }
 
@@ -691,7 +679,7 @@ graphics::graphic_piece* graphics::Element_Promotion_Selector::get_selectetd(SDL
 {
 	for (auto& pcs : f_pieces_for_selector)
 	{
-		if (SDL_PointInRect(mouse_pos, pcs.rectangle.get()))
+		if (SDL_PointInRect(mouse_pos, pcs.piece_obj.rectangle.get()))
 		{
 			return &pcs;
 		}
@@ -723,7 +711,7 @@ bool graphics::Element_Promotion_Selector::fill_pieces_for_selector()
 bool graphics::Element_Promotion_Selector::create_piece_drawable(e_type type, e_color color, int offset)
 {
 	std::string name = f_type_to_string[type] + f_color_to_string[color] + ".png";
-	SDL_Texture* texture = create_texture(name, f_renderer);
+	auto texture = create_texture(name, f_renderer);
 	if (texture == nullptr)
 		return false;
 	int pos_x = f_selector_background.x + 20,
@@ -731,7 +719,7 @@ bool graphics::Element_Promotion_Selector::create_piece_drawable(e_type type, e_
 
 	int cell_size = f_gr_board->cell_size();
 	std::unique_ptr<SDL_Rect> rectangle = std::make_unique<SDL_Rect>(SDL_Rect{ pos_x + offset * (cell_size + 20), pos_y, cell_size, cell_size });
-	f_pieces_for_selector.push_back({ std::move(rectangle), texture, type, color, {-1, -1}});
+	f_pieces_for_selector.push_back({ std::move(rectangle), std::move(texture), type, color, {-1, -1}});
 	return true;
 }
 

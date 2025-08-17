@@ -30,16 +30,22 @@ namespace graphics
 {
 	enum e_render_state { not_rendered = 0, rendered = 1, pending = 2 };
 
+	struct sdl_deleter
+	{
+		void operator()(SDL_Texture* p) const { SDL_DestroyTexture(p); }
+		void operator()(SDL_Surface* p) const { SDL_FreeSurface(p); }
+		void operator()(TTF_Font* p) const { TTF_CloseFont(p); }
+	};
+
 	struct drawable
 	{
 		std::unique_ptr<SDL_Rect> rectangle;
-		SDL_Texture* texture;
+		std::unique_ptr<SDL_Texture, sdl_deleter> texture{nullptr, sdl_deleter()};
 	};
 
 	struct graphic_piece
 	{
-		std::unique_ptr<SDL_Rect> rectangle;
-		SDL_Texture* texture;
+		drawable piece_obj;
 
 		e_type type;
 		e_color color;
@@ -54,7 +60,7 @@ namespace graphics
 		std::string f_type_to_string[6] = { "Knight", "Bishop", "Rook", "Queen", "King", "Pawn" };
 		std::string f_color_to_string[2] = { "White", "Black" };
 
-		SDL_Texture* create_texture(std::string img_name, SDL_Renderer* renderer);
+		std::unique_ptr<SDL_Texture, sdl_deleter> create_texture(std::string img_name, SDL_Renderer* renderer);
 		void draw(drawable* object, SDL_Renderer* renderer, double rotation = 0);
 		void draw(SDL_Rect* rect, SDL_Texture* tex , SDL_Renderer* renderer, double rotation = 0);
 	};
@@ -68,10 +74,9 @@ namespace graphics
 
 		bool init(int x, int y, int size, std::string texture_name, SDL_Renderer* renderer);
 		void render(e_color game_host);
-		void clean();
 	private:
 		SDL_Renderer* f_renderer;
-		drawable f_board;
+		drawable f_board_obj;
 		int f_cell_size;
 	};
 
