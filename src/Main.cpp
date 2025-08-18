@@ -5,6 +5,8 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HIGHT 768
+// #define WINDOW_WIDTH 800
+// #define WINDOW_HIGHT 600
 
 #define GAME_HOST white
 

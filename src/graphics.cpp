@@ -70,7 +70,7 @@ bool graphics::Scene::init_objects()
 
 	is_init &= f_el_board.init(100, 100, f_hight - 200, BOARD_TEXTURE, f_renderer);
 	is_init &= f_el_pieces.init(f_logic_board.get_board(), f_game_host, &f_el_board, f_renderer);
-	is_init &= f_el_available_moves.init(20, "avlbl_move.png", f_renderer);
+	is_init &= f_el_available_moves.init(f_el_board.cell_size() / 3.5, "avlbl_move.png", f_renderer);
 	is_init &= f_el_promotion_selector.init(&f_el_board, f_renderer);
 	is_init &= f_el_textfields.init(f_renderer);
 	is_init &= f_el_gameover_plate.init(f_el_board.origin()->x, f_el_board.origin()->y, { 128, 128, 128, 255 }, f_el_board.cell_size(), &f_el_textfields, f_renderer);
@@ -138,6 +138,12 @@ void graphics::Scene::handle_events()
 				f_engine->stop();
 			}
 		}
+
+		// if (event.key.keysym.sym == SDLK_F3) {
+		// 	f_width = 800;
+		// 	f_hight = 600;
+		// 	SDL_SetWindowSize(f_window, f_width, f_hight);
+		// }
 #endif
 		break;
 	case SDL_MOUSEMOTION:
@@ -321,7 +327,7 @@ void graphics::Scene::render()
 
 	f_el_board.render(f_game_host);
 	f_el_pieces.render_all();
-	f_el_available_moves.render();
+	f_el_available_moves.render(f_el_board.cell_size());
 	f_el_pieces.render_selected();
 	f_el_promotion_selector.render((e_color)((f_logic_board.get_current_turn() + 1) % 2));
 	f_el_gameover_plate.render(f_logic_board.is_game_over());
@@ -608,13 +614,13 @@ bool graphics::Element_Available_Moves::init(int size, std::string texture_name,
 	return true;
 }
 
-void graphics::Element_Available_Moves::render()
+void graphics::Element_Available_Moves::render(int cell_size)
 {
 	for (auto& pos : f_available_moves)
 	{
 		SDL_Point cur_point = pos;
-		f_moves_highlight.rectangle.get()->x = cur_point.x + 25;
-		f_moves_highlight.rectangle.get()->y = cur_point.y + 25;
+		f_moves_highlight.rectangle.get()->x = cur_point.x + cell_size/2 - f_moves_highlight.rectangle.get()->w/2;
+		f_moves_highlight.rectangle.get()->y = cur_point.y + cell_size/2 - f_moves_highlight.rectangle.get()->h/2;
 		draw(&f_moves_highlight, f_renderer);
 	}
 }

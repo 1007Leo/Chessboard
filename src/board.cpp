@@ -472,9 +472,7 @@ Piece* Board::initiate_promotion(e_type piece_type)
 	Piece* cur_piece = get_piece_by_criteria(Pawn, piece_color, true);
 	coordinate piece_coord = cur_piece->get_coord();
 
-	delete cur_piece;//!!!
-
-	//cur_piece->set_alive(false);
+	cur_piece->set_alive(false);
 
 	switch (piece_type)
 	{

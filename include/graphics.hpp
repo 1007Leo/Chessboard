@@ -113,7 +113,7 @@ namespace graphics
 	{
 	public:
 		bool init(int size, std::string texture_name, SDL_Renderer* renderer);
-		void render();
+		void render(int cell_size);
 		void clean();
 
 		void set_moves(std::list<SDL_Point> new_moves);
