@@ -6,7 +6,7 @@ std::unique_ptr<SDL_Texture, graphics::sdl_deleter> graphics::Texture_Operator::
 	std::unique_ptr<SDL_Surface, sdl_deleter> image;
 	std::unique_ptr<SDL_Texture, sdl_deleter> texture;
 
-	image = std::unique_ptr<SDL_Surface, sdl_deleter>(IMG_Load((IMG_PATH + img_name).c_str()));
+	image = std::unique_ptr<SDL_Surface, sdl_deleter>(IMG_Load((graphics::settings.get_setting<std::string>("textures_path") + img_name).c_str()));
 	assert(("Error: no image. Check image path.", image.get() != nullptr));
 	
 	texture = std::unique_ptr<SDL_Texture, sdl_deleter>(SDL_CreateTextureFromSurface(renderer, image.get()), sdl_deleter());
@@ -68,7 +68,7 @@ bool graphics::Scene::init_objects()
 
 	bool is_init = true;
 
-	is_init &= f_el_board.init(100, 100, f_hight - 200, BOARD_TEXTURE, f_renderer);
+	is_init &= f_el_board.init(100, 100, f_hight - 200, graphics::settings.get_setting<std::string>("board_texture"), f_renderer);
 	is_init &= f_el_pieces.init(f_logic_board.get_board(), f_game_host, &f_el_board, f_renderer);
 	is_init &= f_el_available_moves.init(f_el_board.cell_size() / 3.5, "avlbl_move.png", f_renderer);
 	is_init &= f_el_promotion_selector.init(&f_el_board, f_renderer);
@@ -88,7 +88,7 @@ void graphics::Scene::handle_engine()
 
 		std::string best_move = f_engine->get_best_move();
 		if (best_move == "") {
-			f_engine->start_evaluating(f_logic_board.get_fen_notation(), 2);
+			f_engine->start_evaluating(f_logic_board.get_fen_notation(), graphics::settings.get_setting<int>("engine_moves_depth"));
 		}
 		else if (best_move == "(none)\r") {
 			f_engine->stop();

@@ -2,24 +2,26 @@
 
 #include "graphics.hpp"
 #include "chess_engine_provider.hpp"
+#include "settings_provider.hpp"
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HIGHT 768
-// #define WINDOW_WIDTH 800
-// #define WINDOW_HIGHT 600
-
-#define GAME_HOST white
-
-#define GAME_WITH_ENGINE true
-#define ENGINE_DIFFICULTY 0
-#define ENGINE_PATH "./res/engine/stockfish/stockfish-windows-x86-64-avx2.exe"
+#define SETTINGS_PATH "./settings/settings.cfg"
 
 int main(int argc, char** argv) 
 {
-	ChessEngineProvider engine = ChessEngineProvider(ENGINE_PATH, ENGINE_DIFFICULTY);
-	graphics::Scene scene(GAME_HOST, &engine, GAME_WITH_ENGINE);
 
-	if (!scene.init_SDL("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HIGHT))
+	graphics::settings = SettingsProvider(SETTINGS_PATH);
+
+	ChessEngineProvider engine = ChessEngineProvider(
+		graphics::settings.get_setting<std::string>("engine_path"), 
+		graphics::settings.get_setting<int>("engine_skill_level")
+	);
+	graphics::Scene scene(
+		graphics::settings.get_setting<e_color>("game_host_color"), 
+		&engine, 
+		graphics::settings.get_setting<bool>("engine")
+	);
+
+	if (!scene.init_SDL("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, graphics::settings.get_setting<int>("window_width"), graphics::settings.get_setting<int>("window_height")))
 	{
 		std::cout << "Error! Unable to initialize SDL or TTF.";
 		return 0;
@@ -40,6 +42,8 @@ int main(int argc, char** argv)
 	}
 	scene.clean_objects();
 	scene.clean_SDL();
+
+	graphics::settings.save_to_file();
 
 	return 0;
 }

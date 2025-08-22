@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <array>
 #include <vector>
 #include <memory>
 #include <map>
@@ -17,17 +18,12 @@
 
 #include "board.hpp"
 #include "chess_engine_provider.hpp"
-
-#if defined (__unix)
-	#define IMG_PATH "res/Textures/"
-#else 
-	#define IMG_PATH "res\\Textures\\"
-#endif
-
-#define BOARD_TEXTURE "Board2.png"
+#include "settings_provider.hpp"
 
 namespace graphics
 {
+	inline SettingsProvider settings;
+
 	enum e_render_state { not_rendered = 0, rendered = 1, pending = 2 };
 
 	struct sdl_deleter
@@ -55,11 +51,11 @@ namespace graphics
 
 	class Texture_Operator
 	{
-	protected:
+	public:
 		//don't change the order
-		std::string f_type_to_string[6] = { "Knight", "Bishop", "Rook", "Queen", "King", "Pawn" };
-		std::string f_color_to_string[2] = { "White", "Black" };
-
+		inline static const std::array<std::string, 6> f_type_to_string = { "Knight", "Bishop", "Rook", "Queen", "King", "Pawn" };
+		inline static const std::array<std::string, 2> f_color_to_string = { "White", "Black" };
+	protected:
 		std::unique_ptr<SDL_Texture, sdl_deleter> create_texture(std::string img_name, SDL_Renderer* renderer);
 		void draw(drawable* object, SDL_Renderer* renderer, double rotation = 0);
 		void draw(SDL_Rect* rect, SDL_Texture* tex , SDL_Renderer* renderer, double rotation = 0);
