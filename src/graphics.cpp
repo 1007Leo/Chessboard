@@ -125,7 +125,7 @@ void graphics::Scene::handle_events()
 		if (event.key.keysym.sym == SDLK_F1)
 		{
 			this->clean_objects();
-			f_engine->start(); // TODO: make this dependant of the setting
+			settings.get_setting<bool>("engine") ? f_engine->start() : f_engine->stop();
 			this->init_objects();
 		}
 #ifdef DEBUG
